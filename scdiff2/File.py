@@ -112,7 +112,7 @@ class TabFile(File):
 			dset[row_count:]=chunk_X 
 			row_count+=len(chunk)
 			chunk_ct+=1
-			print(chunk_ct)
+			print("%s cells"%(chunk_ct*(chunksize+1)))
 			
 		
 		dt = h5py.string_dtype()
