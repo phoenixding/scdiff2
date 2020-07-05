@@ -217,13 +217,11 @@ For best experience, please use >16G RAM and try to use any many threads (--ncor
 
 # CREDITS
  
-This software was developed by ZIV-system biology group @ Carnegie Mellon University.  
-Implemented by Jun Ding.
+This software was developed by ZIV-system biology group @ Carnegie Mellon University.    
+Developed by Jun Ding.  
 
-Please cite our paper [Reconstructing differentiation networks and their regulation from time series single cell expression data](https://genome.cshlp.org/content/early/2018/01/09/gr.225979.117).
-scdiff2 uses many functions from scanpy (https://scanpy.readthedocs.io/en/stable/api/index.html) for the initialization.  Many thanks for the great tool. 
-A PGM refined clustering results (colored by scdiff2 clusters, and capture time of the cells).    
-
+Please cite our paper [Reconstructing differentiation networks and their regulation from time series single cell expression data](https://genome.cshlp.org/content/early/2018/01/09/gr.225979.117).  
+scdiff2 uses many functions from scanpy (https://scanpy.readthedocs.io/en/stable/api/index.html) for the initialization.  Many thanks for the great tool.   
 # LICENSE 
  
 This software is under MIT license.  
