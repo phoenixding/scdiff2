@@ -21,7 +21,7 @@ Here are a few key challenges that this updated version of scdiff2 strikes to ad
 1. New scdiff2 now handle huge single cell data efficiently! 
 As the scale of the single-cell RNA-seq datasets is ever-increasing (from hundred cells ->tens of thousand cells and even more. 
 The memory and time efficiency for the original scdiff is becoming a bottleneck of its application.  
-Here, we have been developing the next version, scdiff2, to use HDF5, Sparse-matrix, and multi-threading techniques to reduce the resource requirement of the program while improving the efficiency.  Besides, we also incorporated many popular clustering and trajectory methods (mostly implemented by scanpy https://scanpy.readthedocs.io/en/stable)
+Here, we have been developing the next version, scdiff2, that uses HDF5, Sparse-matrix, and multi-threading techniques to reduce the resource requirement of the program while improving the efficiency.  Besides, we also incorporated many popular clustering and trajectory methods (mostly implemented by scanpy https://scanpy.readthedocs.io/en/stable)
 in a "prerun" program to learn an initial trajectory for future refinement (by HMM-like Probabilistic graphical models).  
 scdiff now can finish processing 40k cells (~10k genes/cell) within 4 hours @ a desktop: Ryzen 3500 6 cores, 16G RAM).   
 
