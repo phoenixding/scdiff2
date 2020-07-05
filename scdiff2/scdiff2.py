@@ -843,6 +843,8 @@ def parseLR(etf,LRC):
 
 # In[3]:
 def inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLOOP=5):   
+    if os.path.exists(output)==False:
+        os.mkdir(output)
     logfile=open("%s/runninglog.txt"%(output),'a')
     # log the start time
     tnow="The program starts at : %s \n"%(str(datetime.datetime.now()))

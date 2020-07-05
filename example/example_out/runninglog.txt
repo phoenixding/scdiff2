@@ -1,4 +1,4 @@
-The program starts at : 2020-07-05 05:58:36.217922 
+The program starts at : 2020-07-05 07:18:23.853302 
     The program runs with the following arguments
     
     $scdiff2
@@ -20,3 +20,14 @@ likelihood: -1334.8432584323705
 likelihood: -1272.6148271035117 -> likelihood increase this loop: 0.04661853062953572
 updating the javascript powered visualization file (example.E.h5ad.html) under the InteractiveViz folder
 ->loop: 1
+likelihood: -1196.0434282645167 -> likelihood increase this loop: 0.0573635880881774
+updating the javascript powered visualization file (example.E.h5ad.html) under the InteractiveViz folder
+->loop: 2
+likelihood: -1196.0434282645167 -> likelihood increase this loop: 0.0
+The stopping criteria is met, quit the loop 
+
+ Updating the PGM refined clustering (UMAP), trajectory (PAGA), and DE genes plots 
+writing the results to a example_out/example.E.h5ad file ...
+job completed!
+The program ends at : 2020-07-05 07:27:40.897923 
+
