@@ -183,7 +183,7 @@ For the scdiff2 main program, it has 3 *REQUIRED* parameters:
 	all other parameters are optional.   
 # EXAMPLE
 ## (1) Example input files   
-We have provided an example (ipython notebook) in the example directory [example/](example)  
+We have provided an example (inputs and outputs) in the example directory [example/](example)  
 
 a) example expression file for pre-run : [example/example.E](example/example.E)  
 b) example　tf_dna file: [example/Human_TF_targets.txt](example/Human_TF_targets.txt)  
