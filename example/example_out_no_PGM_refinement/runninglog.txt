@@ -1,0 +1,20 @@
+The program starts at : 2020-07-05 06:20:30.289646 
+    The program runs with the following arguments
+    
+    $scdiff2
+    -i t1_out/example.E.h5ad
+    -o t1_out
+    -t Human_TF_targets.txt
+    --etfListFile None
+    --log2fc 0.6
+    --ncores 10
+    --root None
+    --llhCut 0.05
+    --maxloop 0 
+    
+reading cells ...
+clustering cells ...
+building graph(tree) ...
+job completed!
+The program ends at : 2020-07-05 06:21:05.833281 
+

@@ -1,0 +1,22 @@
+The program starts at : 2020-07-05 05:58:36.217922 
+    The program runs with the following arguments
+    
+    $scdiff2
+    -i example_out/example.E.h5ad
+    -o example_out
+    -t Human_TF_targets.txt
+    --etfListFile None
+    --log2fc 0.6
+    --ncores 10
+    --root None
+    --llhCut 0.02
+    --maxloop 5 
+    
+reading cells ...
+clustering cells ...
+building graph(tree) ...
+likelihood: -1334.8432584323705
+->loop: 0
+likelihood: -1272.6148271035117 -> likelihood increase this loop: 0.04661853062953572
+updating the javascript powered visualization file (example.E.h5ad.html) under the InteractiveViz folder
+->loop: 1

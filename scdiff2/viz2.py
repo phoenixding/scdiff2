@@ -50,19 +50,22 @@ def GtoJson(G1,prRes):
 	MAX_MTL=max(MTL)
 	
 	print("creating json file ...")
+	CIDS=[item.ID for item in G1.Cells]
+	NIDS=[item.ID for item in G1.Nodes]
 	for j in G1.Nodes:
-		ij=[G1.Cells.index(item) for item in j.cells]
+		ij=[CIDS.index(item.ID) for item in j.cells]
 		try:
 			DT=max(0,(j.mT-G1.root.mT)/(MAX_MTL-G1.root.mT))
 		except:
 			DT='NA'
-		jcj={'ID':j.ID,'eTF':j.eTF,'T':j.T,'E':j.E,'D':DT,'CELL':ij,"parent": "null" if j.P==None else G1.Nodes.index(j.P),"children": "null" if j.C==[] else [G1.Nodes.index(item) for item in j.C]}
+		#pdb.set_trace()
+		jcj={'ID':j.ID,'eTF':j.eTFs,'T':j.T,'E':j.E,'D':DT,'CELL':ij,"parent": "null" if j.P==None else NIDS.index(j.P.ID),"children": "null" if j.C==[] else [NIDS.index(item.ID) for item in j.C]}
 		NL.append(jcj)	
 			
 	EL=[]
 	for j in G1.Edges:
-		jfrom=G1.Nodes.index(j.fromNode)
-		jto=G1.Nodes.index(j.toNode)
+		jfrom=NIDS.index(j.fromNode.ID)
+		jto=NIDS.index(j.toNode.ID)
 		je={'from':jfrom,'to':jto,'etf':j.etf,'de':j.diffG}
 		EL.append(je)
 	out=[[item.upper() for item in GL],CL,NL,EL,dTD]
@@ -218,7 +221,7 @@ def viz(scg_name,G1,output,prRes):
 		height:223px;
 	}
 	#downloadconfig.menu-item ul{
-		height:240px;
+		height:220px;
 	}
 	
 	#cellplot.menu-item  ul{
@@ -2565,23 +2568,27 @@ def viz(scg_name,G1,output,prRes):
 	
 	for i in G1.Nodes:
 		i.E=getAvgEx(i)
-			
+	
 	GJ=GtoJson(G1,prRes)	
-	f=open(output+'/'+scg_name+'.json','w')
+	serverPrefix="InteractiveViz"
+	if os.path.exists("%s/%s"%(output,serverPrefix))==False:
+		os.mkdir("%s/%s"%(output,serverPrefix))
+		
+	f=open('%s/%s/%s.json'%(output,serverPrefix,scg_name),'w')
 	f.write(GJ)
 	f.close()
 	
 	HTML_template=HTML_template%(scg_name+'.json')
-	f=open(output+'/'+scg_name+'.html','w')
+	
+	f=open("%s/%s/%s.html"%(output,serverPrefix,scg_name),'w')
 	f.write(HTML_template)
 	f.close()
-
-	f=open(output+'/style.css','w')
+	
+	f=open("%s/%s/style.css"%(output,serverPrefix),'w')
 	f.write(css_template)
 	f.close()
 
-
-	f=open(output+'/parseJSON.js','w')
+	f=open("%s/%s/parseJSON.js"%(output,serverPrefix),'w')
 	f.write(javascript)
 	f.close()
 	

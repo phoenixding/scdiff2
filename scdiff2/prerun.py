@@ -80,7 +80,7 @@ def prerun(exFn,outdir,iformat):
 	sc.tl.paga(d1)
 	sc.pl.paga(d1,show=False,save="_Traj.pdf")
 	sc.tl.umap(d1,init_pos='paga')
-	sc.pl.umap(d1,color=['leiden'],legend_loc='on data',show=False,save="_clustering.pdf")
+	sc.pl.umap(d1,color=['leiden','time'],legend_loc='on data',show=False,save="_clustering.pdf")
 
 
 	# # get DE genes for each of the clusters
