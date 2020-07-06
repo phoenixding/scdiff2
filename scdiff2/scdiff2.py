@@ -984,20 +984,23 @@ def inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLO
 def main():
     # parse input arguments
     parser=argparse.ArgumentParser(description="scdiff2 main")
-    parser.add_argument('-i','--input',required=True,help='h5ad result from pre-run')
-    parser.add_argument('-o','--output',required=True,help='output directory')
-    parser.add_argument('-t','--tfdna',required=True, help='TF-DNA interaction data')
-    parser.add_argument('--etfListFile',required=False,default=None,help='By default, this program recognizes 1.6k TFs (collected in human and mouse). Users are able ' +
+    parser._action_groups.pop()
+    required = parser.add_argument_group('required arguments')
+    optional = parser.add_argument_group('optional arguments')
+    required.add_argument('-i','--input',required=True,help='h5ad result from pre-run')
+    required.add_argument('-o','--output',required=True,help='output directory')
+    required.add_argument('-t','--tfdna',required=True, help='TF-DNA interaction data')
+    optional.add_argument('--etfListFile',required=False,default=None,help='By default, this program recognizes 1.6k TFs (collected in human and mouse). Users are able ' +
                                                                          'to provide a customized list of TFs　using this option (e.g, for another species).')                                                       
-    parser.add_argument('--log2fc',required=False,default=0.6, help='By default, scdiff uses log2 Fold change 0.6(=>2^0.6~=1.5) as the cutoff ' +
+    optional.add_argument('--log2fc',required=False,default=0.6, help='By default, scdiff uses log2 Fold change 0.6(=>2^0.6~=1.5) as the cutoff ' +
                                                                     'for differential genes (together with student t-test p-value cutoff 0.05). ' +
                                                                     'Users can customize this log fold change cutoff.')
-    parser.add_argument('--ncores',required=False,default=4, help='# of allocated cpu cores for multi-threading the job (4 by default)')
-    parser.add_argument('--root',required=False,default=None, help='Set the root (of the tree) as an input cluster ID (e.g., 0 from the prerun result)')  
+    optional.add_argument('--ncores',required=False,default=4, help='# of allocated cpu cores for multi-threading the job (4 by default)')
+    optional.add_argument('--root',required=False,default=None, help='Set the root (of the tree) as an input cluster ID (e.g., 0 from the prerun result)')  
     
-    parser.add_argument('--llhCut',required=False,default=0.05, help='The convergence likelihood cutoff, the program stops if the cell ' +
+    optional.add_argument('--llhCut',required=False,default=0.05, help='The convergence likelihood cutoff, the program stops if the cell ' +
                                                                 'assignment likelihood improvement is smaller than this cutoff (e.g. 0.05: 5 percent)') 
-    parser.add_argument('--maxloop',required=False,default=5, help='The max # of loops allowed for the PGM based iterative refinment. Set it to 0 ' +
+    optional.add_argument('--maxloop',required=False,default=5, help='The max # of loops allowed for the PGM based iterative refinment. Set it to 0 ' +
                                                                 'to directly use the clustering and trajectory results from the prerun program (scanpy based). ' +
                                                                 'Only the regulatory networks (TFs) and the interactive visulzation page ' +
                                                                 'will be learned and generated')

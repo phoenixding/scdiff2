@@ -91,21 +91,22 @@ def prerun(exFn,outdir,iformat):
 	# # 
 	d1.write_h5ad("%s/%s.h5ad"%(outdir,exFn),compression=9)
 	print("\n\n>>>>------------------------------------------------<<<<")
-	print("prerun completed! please run scdiff for the second pass")
+	print("prerun completed! please run scdiff2 for the second pass")
 	return d1
 
 def main():
-	parser=argparse.ArgumentParser(description="scdiff2 pre-run")
-	parser.add_argument('-i','--input',required=True,help='input single cell RNA-seq expression data')
-	parser.add_argument('-o','--output',required=True,help='output directory')
-	parser.add_argument('-f','--format',required=True, default='raw', help='the format of input expression, either raw/norm (raw: raw read counts, norm: normalized expression')
-
-	args = parser.parse_args()
-	exFn=args.input
-	outdir=args.output 
-	iformat=args.format 
-	prerun(exFn,outdir,iformat)
-
+    parser=argparse.ArgumentParser(description="scdiff2 pre-run")
+    parser._action_groups.pop()
+    required = parser.add_argument_group('required arguments')
+    optional = parser.add_argument_group('optional arguments')
+    required.add_argument('-i','--input',required=True,help='input single cell RNA-seq expression data')
+    required.add_argument('-o','--output',required=True,help='output directory')
+    optional.add_argument('-f','--format',required=False, default='raw', help='the format of input expression, either raw/norm (raw: raw read counts, norm: normalized expression')
+    args = parser.parse_args()
+    exFn=args.input
+    outdir=args.output 
+    iformat=args.format 
+    prerun(exFn,outdir,iformat)
 
 if __name__=="__main__":
 	main()
