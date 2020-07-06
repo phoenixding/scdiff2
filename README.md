@@ -12,11 +12,14 @@
 
 # INTRODUCTION 
 This is the next version of our scdiff software suite (https://github.com/phoenixding/scdiff). 
-scdiff was proven very successful in inferring cell differentiation trajectories and the underlying regulatory networks 
+scdiff was proven successful in inferring cell differentiation trajectories and the underlying regulatory networks 
 (e.g,https://doi.org/10.1016/j.stem.2018.09.009 and https://doi.org/10.1016/j.stem.2019.12.009). 
-However, with the rapid development of single-cell technologies, many new computational challenges have been raised 
-in understanding various biological processes (e.g., cell differentiation or cancer progression), particularly by deciphering single-cell genomics data. 
-Here are a few key challenges that this updated version of scdiff2 strikes to address.
+However, with the rapid development of single-cell technologies, many new computational challenges arised 
+in reconstructing the cell dynamics (dynamic trajectories and gene regulation) in various biological processes. 
+To address those challenges, we would require more efficient, scalable, accurate and interactive models for better
+exploring the expensive single-cell genomics data. scdiff2 is developed to meet the emergent needs in the field for such methods.  
+
+
 
 ## 1. New scdiff2 now handle huge single cell data efficiently! 
 As the scale of the single-cell RNA-seq datasets is ever-increasing (from hundred cells ->tens of thousand cells and even more. 
@@ -27,54 +30,30 @@ scdiff2 now can finish processing 40k cells (~10k genes/cell) within 1 hour @ a 
 Without the PGM refinement, it can complete in a few minutes (e.g, 7 mins using --ncores 10 --maxloop 10 parameters).   
 
 
-## 2. New scdiff2 now is fully customizable! (composed of many moving pieces, each can be customized/modified).  
+## 2. New scdiff2 now is fully customizable!  
 First, the selection of the root node (cells) is critical for the tree-structure cell trajectory inference. 
 In scdiff2, we combined the trajectory from PAGA (https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1663-x)
 and the capture time (the actual time of the cells) to infer a potential root of the tree.  
 Based on the inferred root, we will build the trajectory based on both gene expression and cell capture time information.
-Here, the users are allowed to customize the root of the tree. Any clusters are allowed to be set as the root, the program will automatically 
-learn the best tree structure (and underlying regulatory networks) accordingly.   
+The users are also allowed to customize the root. Any clusters are allowed to be set as the root, the program will automatically 
+learn the best tree structure (and underlying regulatory networks) accordingly.     
 
-Second, the new scdiff2 was composed of 2 passes now. In the first pass, we run the scanpy clustering and PAGA method to infer the initial clusters,
-and potential connections between the clusters.  In the second pass, we used a Probablistic Graphical Model (PGM) based strategy (described in the original scdiff paper) 
-to get the final trajectory and regulatory networks by iteratively refining the results from the prerun. 
-The prerun results (e.g. [example/example_out/figures/paga_Traj.pdf](example/example_out/figures/paga_Traj.pdf)]from the first pass can also help users to 
-manually set the trajectory root (via --root ) for the second pass.  Users can customize all the clustering and trajectory inference methods used in the first run,
-and get the final model based on the user-supplied clustering/trajectory results. All the results from the analysis are stored in a h5ad file
-[example/example.E.h5ad])(example/example.E.h5ad). Users are able to modify and further analyze the results (clusters, trajectory, and regulatory network) with the provided h5ad 
-result file.  The scdiff2 main program also accepts an h5ad file (via --i) (It can be produced by the provided pre-run program, or scanpy, or any other methods).  
-Please refer to anndata package for details of h5ad file format (https://anndata.readthedocs.io/en/stable/anndata.AnnData.html)
+Second, the new scdiff2 was composed of many moving pieces now, each can be customized and modified (via the provided Graph class in scdiff2, will provide the tutorial soon).  
+It has two passes: in the first pass, we learn an initialization using a provided prerun program (any user-provided);
+in the second pass, we used a Probablistic Graphical Model (PGM) based strategy (described in the original scdiff paper) 
+to iteratively refine the trajectory (tree) from the prerun initialization. 
 
-
-an example h5ad looks like the following:
-```
-AnnData object with n_obs × n_vars = 152 × 5342
-    obs: 'label', 'time', 'n_genes', 'n_genes_by_counts', 'total_counts', 'total_counts_mt', 'pct_counts_mt', 'leiden'
-    var: 'n_cells', 'mt', 'n_cells_by_counts', 'mean_counts', 'pct_dropout_by_counts', 'total_counts', 'highly_variable', 'means', 'dispersions', 'dispersions_norm'
-    uns: 'diffmap_evals', 'leiden', 'leiden_colors', 'leiden_sizes', 'neighbors', 'paga', 'pca', 'rank_genes_groups', 'umap'
-    obsm: 'X_diffmap', 'X_pca', 'X_umap'
-    varm: 'PCs'
-    obsp: 'connectivities', 'distances'
-```
-The scdiff2 main programs used the following attributes, make sure to include them if you want to supply scdiff2 with your customized h5ad result. 
-```
- AnnData object with n_obs × n_vars = 152 × 5342
-    obs: 'time', 'leiden'
-    var: 
-    uns:  'paga'
-    obsm: 'X_diffmap', 'X_pca', 'X_umap'
-``` 
-
-The --input for the scdiff2 must be in anndata format(https://anndata.readthedocs.io/en/stable/anndata.AnnData.html). 
-You can use the provided 'prerun' program or 'scanpy' for the prerun analysis.
+## 3 New scdiff2 inherits the interactive visualization functionality!
+Such interactive capability was proven to be very useful in finding key regulatory factors (TFs), genes (DE genes), and functions (GO term analysis) in our previous
+collaborations with developmental biologists and cancer biologists. We are committed to keep improving the interactive functionality as per requests from the users.  
 
 
 # PREREQUISITES
-* python3.6+
+* Python3.6+
 It was installed by default for most Linux distribution and MAC.  
 If not, please check [https://www.python.org/downloads/](https://www.python.org/downloads/) for installation 
-instructions. 
-*PLEASE NOT*: python 2.7 is no longer supported by the scdiff software suite. Please consider upgrading to Python3.6+/  
+instructions.   
+__PLEASE NOTE__: python 2.7 is no longer supported by the scdiff software suite. Please consider upgrading to Python3.6+  
 
 * Python packages dependencies:    
 	-- scipy>0.13.3    
@@ -87,8 +66,9 @@ instructions.
 	-- pandas>=0.23  
 	-- h5py>=2.10  
 The python setup.py script (or pip) will try to install these packages automatically.
-However, please install them manually if, by any reason, the automatic 
+Also, the pip3 installation will install those libraries automatically.  However, please install them manually if, by any reason, the automatic 
 installation fails. 
+
 
 # INSTALLATION
  There are 2 options to install scdiff.  
@@ -193,6 +173,29 @@ For the scdiff2 main program, it has 3 *REQUIRED* parameters:
 	-- -t tf_dna
 		tf_dna specifies the tf-dna interaction file, it's the same format as the original scdiff.   
 	all other parameters are optional.   
+	
+an example h5ad looks like the following:
+```
+AnnData object with n_obs × n_vars = 152 × 5342
+    obs: 'label', 'time', 'n_genes', 'n_genes_by_counts', 'total_counts', 'total_counts_mt', 'pct_counts_mt', 'leiden'
+    var: 'n_cells', 'mt', 'n_cells_by_counts', 'mean_counts', 'pct_dropout_by_counts', 'total_counts', 'highly_variable', 'means', 'dispersions', 'dispersions_norm'
+    uns: 'diffmap_evals', 'leiden', 'leiden_colors', 'leiden_sizes', 'neighbors', 'paga', 'pca', 'rank_genes_groups', 'umap'
+    obsm: 'X_diffmap', 'X_pca', 'X_umap'
+    varm: 'PCs'
+    obsp: 'connectivities', 'distances'
+```
+The scdiff2 main programs used the following attributes, make sure to include them if you want to supply scdiff2 with your customized h5ad result. 
+```
+ AnnData object with n_obs × n_vars = 152 × 5342
+    obs: 'time', 'leiden'
+    var: 
+    uns:  'paga'
+    obsm: 'X_diffmap', 'X_pca', 'X_umap'
+``` 
+
+The --input for the scdiff2 must be in anndata format(https://anndata.readthedocs.io/en/stable/anndata.AnnData.html). 
+You can use the provided 'prerun' program or 'scanpy' for the prerun analysis.
+
 # EXAMPLE
 ## (1) Example input files   
 We have provided an example (inputs and outputs) in the example directory [example/](example)  
