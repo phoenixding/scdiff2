@@ -18,23 +18,34 @@ However, with the rapid development of single-cell technologies, many new comput
 in understanding various biological processes (e.g., cell differentiation or cancer progression), particularly by deciphering single-cell genomics data. 
 Here are a few key challenges that this updated version of scdiff2 strikes to address.
 
-1. New scdiff2 now handle huge single cell data efficiently! 
+## 1. New scdiff2 now handle huge single cell data efficiently! 
 As the scale of the single-cell RNA-seq datasets is ever-increasing (from hundred cells ->tens of thousand cells and even more. 
 The memory and time efficiency for the original scdiff is becoming a bottleneck of its application.  
 Here, we have been developing the next version, scdiff2, that uses HDF5, Sparse-matrix, and multi-threading techniques to reduce the resource requirement of the program while improving the efficiency.  Besides, we also incorporated many popular clustering and trajectory methods (mostly implemented by scanpy https://scanpy.readthedocs.io/en/stable)
-in a "prerun" program to learn an initial trajectory for the future PGM refinement (by HMM-like Probabilistic graphical models).  
-scdiff2 now can finish processing 40k cells (~10k genes/cell) within 4 hours @ a desktop: Ryzen 3500 6 cores, 16G RAM) with PGM refinement.
-Without the PGM refinement, it can complete in a few minutes ()
+in a "prerun" program to learn an initial trajectory for the future PGM refinement (by HMM-like Probabilistic graphical models).    
+scdiff2 now can finish processing 40k cells (~10k genes/cell) within 1 hour @ a desktop: Ryzen 3500 6 cores, 16G RAM) with PGM refinement (--ncores 10 --llhCut 0.05).
+Without the PGM refinement, it can complete in a few minutes (e.g, 7 mins using --ncores 10 --maxloop 10 parameters).   
 
-2. New scdiff2 now is fully customizable! (It has many moving pieces and each piece can be customized/modified).  
-The selection of the root node (cells) is critical for the tree-structure cell trajectory inference. In scdiff2, we combined the trajectory from PAGA (https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1663-x)
-and the capture time (the actual time of the cells) to infer a potential root of the tree.  Based on the inferred root, we will build the trajectory based on both gene expression and cell capture time information.
-Here, the users are allowed to customize the root of the tree.  The new scdiff2 was composed of 2 passes now. In the first pass, we run the scanpy clustering and PAGA method to infer the initial clusters,
-and potential connections between the clusters.  In the second pass, we used an iterative strategy (described in the original scdiff) to get the final trajectory and regulatory networks.  
-The preliminary results from the first pass (prerun) can help users choose the root cluster for the second pass (scdiff2 main program). 
-Theoretically, any clusters are allowed to be set as the root, the program will automatically learn the best tree structure (and underlying regulatory networks) accordingly. 
-Now, the scdiff2 main program accepts an h5ad file (can be produced by a provided pre-run program, or scanpy, or any other methods).  
+
+## 2. New scdiff2 now is fully customizable! (composed of many moving pieces, each can be customized/modified).  
+First, the selection of the root node (cells) is critical for the tree-structure cell trajectory inference. 
+In scdiff2, we combined the trajectory from PAGA (https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1663-x)
+and the capture time (the actual time of the cells) to infer a potential root of the tree.  
+Based on the inferred root, we will build the trajectory based on both gene expression and cell capture time information.
+Here, the users are allowed to customize the root of the tree. Any clusters are allowed to be set as the root, the program will automatically 
+learn the best tree structure (and underlying regulatory networks) accordingly.   
+
+Second, the new scdiff2 was composed of 2 passes now. In the first pass, we run the scanpy clustering and PAGA method to infer the initial clusters,
+and potential connections between the clusters.  In the second pass, we used a Probablistic Graphical Model (PGM) based strategy (described in the original scdiff paper) 
+to get the final trajectory and regulatory networks by iteratively refining the results from the prerun. 
+The prerun results (e.g. [example/example_out/figures/paga_Traj.pdf](example/example_out/figures/paga_Traj.pdf)]from the first pass can also help users to 
+manually set the trajectory root (via --root ) for the second pass.  Users can customize all the clustering and trajectory inference methods used in the first run,
+and get the final model based on the user-supplied clustering/trajectory results. All the results from the analysis are stored in a h5ad file
+[example/example.E.h5ad])(example/example.E.h5ad). Users are able to modify and further analyze the results (clusters, trajectory, and regulatory network) with the provided h5ad 
+result file.  The scdiff2 main program also accepts an h5ad file (via --i) (It can be produced by the provided pre-run program, or scanpy, or any other methods).  
 Please refer to anndata package for details of h5ad file format (https://anndata.readthedocs.io/en/stable/anndata.AnnData.html)
+
+
 an example h5ad looks like the following:
 ```
 AnnData object with n_obs × n_vars = 152 × 5342
@@ -194,6 +205,7 @@ After installing scdiff2 successfully, cd to the example folder and run the foll
 $ prerun -i example.E -o example_out -f raw
 $ scdiff2 -i example_out/example.E.h5ad -o example_out -t example_tfdna.txt --ncores 10
 ```
+
 ## (2) Example output files    
 You can check all the output results under the output directory:       
 i) Result with the PGM refinement (--llhCut -0.05 --maxloop 5) : [example/example_out](example/example_out)  
@@ -210,12 +222,53 @@ c) A PGM refined scdiff tree model with the regulatory information (TFs) (intera
 
 PGM VS. no refinement performance comparison (for this example data): 
 
-Likelihood :  With PGM refinement (-1196.0434282645167)> Without PGM refinement (-1334.8432584323705) => Total improvement 10.34%  
-Running time:   With PGM refinement (~9mins) > without PGM refinement (~1min) => ~9 times slower 
+__Likelihood__:    
+With PGM refinement (-1196.0434282645167)> Without PGM refinement (-1334.8432584323705) => Total improvement 10.34%  
 
+__Running time__:    
+With PGM refinement (9mins) > without PGM refinement (1min) => 9 times slower   
+
+# USAGE GUIDELINE  
+### Hardware    
 For best experience, please use >16G RAM and try to use any many threads (--ncores) as possible.  
-Increasing --ncores (# of allocated cpu cores) may slightly increase the memory usage (consider reduce --ncores if the memory resource is limited).   
-An a guideline, a 16G RAM would be enough for a reasonably big dataset (40k cells, 10k genes) with multi-threading of 12 cpu cores.  
+Increasing --ncores (# of allocated cpu cores) may slightly increase the memory cost (limit --ncores if the memory resource is limited).
+An a guideline, a 16G RAM would be enough for a reasonably big dataset (\~ 40k cells, 10k genes) with multi-threading of 12 cpu cores. 
+### Parameters 
+(1) --maxloop  (optional but critical)  
+Please set --maxloop 0 if you accept the clustering/trajectories from the prerun, it can dramatically cut-down the running time (from \~ hours -> \~ minutes).
+The improvement varies a lot depending on specific application scenarios, in the above example, we got 10% improvement with spending 9x more running time. 
+This parameter is optional, if you are not sure how to set it, just leave it as the default (or 0 as discussed above).       
+
+(2) --logfc (optional) 
+This specifies the log fold change cutoff for identifying and utilizing differential genes in the trajectories (and another condition:  student t-test p-value <0.05 is forced in the program)
+Please set --logfc to a larger value (e.g., --logfc 1.5 -> 3x fold change) if you want to find and use "stringent" differential genes 
+Please set --logfc to a smaller value (e.g., --logfc 0.6 --> 1.5x fold change) if you want to identify and use "possibly" more differential genes.    
+We recommend a value better in a range 0.5 to 1.5.    This parameter is optional, if you are not sure how to set it, just leave it as the default.  
+
+(3) --root (optional but critical)  
+In a cell differentiation or disease progression process, you will always need to know what is the starting point (i.e., the root node) if we
+assume the trajectory is tree-structured that is commonly accepted.   From the prerun results, we will find an umap clustering plot and PAGA trajectory as I mentioned
+in the above example section.  Combining your prior knowledge (e.g, specific markers) with the prerun results, you will be able to make an informed choice of the root.  
+You can check the expression for any specific gene (e.g, markers) with the provided "plotGene.py" script under the [utils](utils) folder. 
+
+(4) --etfListFile (optional)  
+By default, we provided a list of collected TFs in human and mouse, which is quite comprehensive with more than 1.2k TFs.  
+If you are working in another species or you want to use your own list of TFs, please use this parameter. 
+Please make sure the gene names are consistent with your input gene expression file.   
+If you work in human and mouse, you can leave it as the default.  
+
+(5) --llhCut (optional)  
+the initial results will be iteratively refined by a PGM approach. In each loop, we will calculate a likelihood (of the cell assignment to the model). 
+The likelihood will keep increasing and this parameter specifies when to stop.   By default, it's set as 0.05, which if the improvement is less than 5% of the original likelihood, it will stop.
+Here, we recommend a value in a range from 0.01 (1%) to 0.1 (10%).  A smaller value would dramatically increase the running time while providing marginal improvement. 
+A larger value would approximate --maxloop 0.  
+  
+# UTILS
+We will keep provide custom scripts to better explore the model and predictions.  
+All those utility scripts will be placed under [utils](utils) folder.   
+All user contributed scripts are highly welcomed (best to provide an example test to prove its accuracy). 
+You can add the script via the github or email me @ the address given below.  
+__You credits__ will be __honored__ in the CREDITS section below.  
 
 # CREDITS
  
