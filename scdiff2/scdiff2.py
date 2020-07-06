@@ -576,9 +576,16 @@ class Graph:
     
     # guess the root node of the tree
     def __guessRoot(self,pagaConnects,rootnodeID=None):
-        self.Nodes=sorted(self.Nodes,key=lambda x:x.T)
         if rootnodeID==None:
-            root=self.Nodes[0]
+            self.Nodes=sorted(self.Nodes,key=lambda x:x.T)
+            firstNodeT=self.Nodes[0].T
+            firstNodes=[item for item in self.Nodes if int(item.T)==int(firstNodeT)]
+            ConnectStrengthList=[]
+            for i in firstNodes:
+                iConnectsum=sum(pagaConnects.loc[i.ID]+pagaConnects[i.ID])
+                ConnectStrengthList.append([iConnectsum,i])
+            ConnectStrengthList=sorted(ConnectStrengthList,key=lambda x:x[0], reverse=True)
+            root=ConnectStrengthList[0][0]
         else:
             root=[item for item in self.Nodes if item.ID==int(rootnodeID)][0]
         return root
@@ -605,7 +612,7 @@ class Graph:
             i.C=[]
             
         self.__connectS(self.root,[],pagaConnects)
-            
+        
         # add Children node information
         for inode in self.Nodes:
             if inode.P!=None:
