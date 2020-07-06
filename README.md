@@ -10,6 +10,19 @@
                                                            
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+# Table of Contents
+1. [INTRODUCTION](#INTRODUCTION)
+2. [PREREQUISITES](#PREREQUISITES)
+3. [INSTALLATION](#INSTALLATION)
+4. [USAGE](#USAGE)
+5. [EXAMPLE](#EXAMPLE)
+6. [GUIDELINE](#GUIDELINE)
+7. [UTILS](#UTILS)
+8. [CREDITS](#CREDITS)
+9. [LICENSE](#LICENSE)
+10. [CONTACT](#CONTACT)
+
+
 # INTRODUCTION 
 This is the next version of our scdiff software suite (https://github.com/phoenixding/scdiff). 
 scdiff was proven successful in inferring cell differentiation trajectories and the underlying regulatory networks 
@@ -231,7 +244,7 @@ With PGM refinement (-1196.0434282645167)> Without PGM refinement (-1334.8432584
 __Running time__:    
 With PGM refinement (9mins) > without PGM refinement (1min) => 9 times slower   
 
-# USAGE GUIDELINE  
+# GUIDELINE  
 ### Hardware    
 For best experience, please use >16G RAM and try to use any many threads (--ncores) as possible.  
 Increasing --ncores (# of allocated cpu cores) may slightly increase the memory cost (limit --ncores if the memory resource is limited).
