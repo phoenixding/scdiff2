@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[1]: Author statement
 
 
 #!/usr/bin/env python
@@ -18,9 +18,9 @@
 # All rights reserved.
 # Please don NOT modify the above statement.
 
-# In[2]:
-
-
+# In[2]: Import modules
+## Log in needed modules 
+    
 import pdb,sys,os,random
 import numpy as np
 import scanpy as sc
@@ -53,15 +53,9 @@ from functools import partial
 import pkg_resources
 from viz2 import *
 
+# In[3]:Class cell
 
-# # 1. Classes
-
-# ## (1) Class Cell
-
-# In[3]:
-
-
-# class cell
+## class cell
 class Cell:
     def __init__(self, Cell_ID, TimePoint, Expression,typeLabel):
         self.ID=Cell_ID
@@ -72,12 +66,9 @@ class Cell:
         
 
 
-# ## (2) Class Cluter (Node)
 
-# In[4]:
-
-
-# class Cluster (Node in the Tree Graph-Trajectory)
+# In[4]:Class cluster(Node)
+## class Cluster (Node in the Tree Graph-Trajectory)
 class Cluster:
     def __init__(self,cells,ID):
         self.cells=cells                                 # cells (data poitns) for the cluster
@@ -178,18 +169,13 @@ class Cluster:
         R=[item+pcount for item in R]
         return [AE,R]
 
-# ## (3) Class Path (Edge)
-
-# In[5]:
-
-
-# Class Path (Edge)
+# In[5]: Class Path(Edge)
+## Class Path (Edge)
 class Path:
-    def __init__(self,fromNode,toNode,Nodes,GL,dTD,dTG,dMb,fChangeCut=0.6):
+    def __init__(self,fromNode,toNode,GL,dTD,dTG,fChangeCut=0.6):
         print("build edge %s->%s"%(fromNode.ID,toNode.ID))
         self.fromNode=fromNode                                                  # from Node
         self.toNode=toNode                                                      # to Node
-        self.AllNodes=Nodes
         
         self.FC=self.__getFC(GL)                                                      # fold change for all genes
         self.diffF=self.__getDiffGene(fChangeCut)                                     # get differnetial genes based on log fold change 
@@ -197,10 +183,10 @@ class Path:
         self.diffG=[item for item in self.diffF if item in self.diffT]                # get differnetial genes based on fold change and student t-test
        
         self.ptf=self.fromNode.getExpressedTF(dTD.keys(),GL)                         # expressed TFs
-        self.etf=self.__getetf(dTD,dTG,dMb,GL,fChangeCut)                            # transcription factors and diff TFs
+        self.etf=self.__getetf(dTD,dTG,GL,fChangeCut)                            # transcription factors and diff TFs
         
         #---------------------------------------------------------------------- 
-        self.B=self.__getTransition(dTD,dTG,dMb,GL,fChangeCut)                       # transition offset
+        self.B=self.__getTransition(dTD,dTG,GL,fChangeCut)                       # transition offset
         self.Q=self.__getProcessVariance(GL,MU=self.fromNode.E)                      # initial process variance
           
     #--------------------------------------------------------------
@@ -267,13 +253,11 @@ class Path:
     # # get enriched TFs based on significantly diff genes
     #---------------------------------------------------------------
     # dMi: input sequence scanning result
-    # dMb: background sequence scanning result
     # n: number of sequences in input
     # dTD: dictionary TF->DNA
-    # dMb: TF binding for background
     # review erniched TF
 
-    def __getetf(self,dTD,dTG,dMb,GL,FCUT):
+    def __getetf(self,dTD,dTG,GL,FCUT):
         # strategy 1 (new): 
         # using manwhiteneyu test => find TF whose target genes are "signiciantly" differential along the edge  (compared with all target genes -background)
         def getEnrichTF():
@@ -289,33 +273,14 @@ class Path:
                     entf.append([pAB,i])
             entf=sorted(entf,key=lambda x:x[0])
             return entf
-            
-        # strategy 2: the target genes of the TF is significiantly overlapping with the DE targets of the edge (used in scdiff1 and out-dated)
-        def getEnrichTF2():
-            pcut=0.1
-            dMi=batchScanPrior([item.upper() for item in self.diffG],dTD)
-            K=[item for item in dMi.keys() if item in dMb.keys()]
-            K.sort()
-            n=len(self.diffG)    # number of diff genes
-            N=len(GL)            # N: number of sequences in background (all)
-            entf=[]
-            for i in K:
-                Ti=len(dMi[i])
-                Tb=len(dMb[i])
-                pr=float(Tb)/N
-                pvi=1-binom.cdf(Ti-1,n,pr)
-                if pvi<pcut:
-                    entf.append([pvi,i])
-            entf.sort()
-            return entf
-        #-------------------------------------------------------------
+        
         print("infer TFs based on their target genes for edge %s->%s"%(self.fromNode.ID, self.toNode.ID))
         etf=getEnrichTF()
         etf=[item for item in etf if item[1] in self.ptf]
         return etf
 
     # Lasso regresion model for each path
-    def __getTransition(self,dTD,dTG,dMb,GL,FCUT=0.6):
+    def __getTransition(self,dTD,dTG,GL,FCUT=0.6):
         G = self.FC
         etfID = [item[1] for item in self.etf]
         dR={0:2,1:-2,2:0} 
@@ -372,13 +337,8 @@ class Path:
         Q=[item+pcount for item in Q]
         return Q
 
-
-# ## (4) Class Graph (Tree)
-
-# In[6]:
-
-
-# class Graph 
+# In[6]:Graph(Tree)
+## class Graph 
 class Graph:
     def __init__(self,Cells,tfdna,etfile,GL,Clusters,pagaConnects,rootnodeID=None,fChangeCut=0.6,ncores=None):
         # native graph attributes
@@ -396,9 +356,9 @@ class Graph:
         self.__connectNodes(pagaConnects) # connect the nodes to build the tree
         self.getNodePR()
         self.__adjustRTFs(ncores) # get eTFs for each of hte nodes
-       
+        
         # edges
-        [self.dTD,self.dTG,self.dMb]=parseTFDNA(tfdna,GL)
+        [self.dTD,self.dTG]=parseTFDNA(tfdna,GL)
         self.Edges=self.__buildEdges(ncores)
         self.Paths = self.__buildPaths()
         
@@ -437,20 +397,38 @@ class Graph:
         # re-assign
         print("re-assigning all cells to the tree")
         
-        pool=Pool(processes=ncores,maxtasksperchild=1000)
-        Res=pool.map_async(self.AssignCell,[item.ID for item in self.Cells])
-        pool.close()
-        pool.join()
-        Res=Res.get()
+        cellParList=[]
+        for i in self.Cells:
+            for j in self.Nodes:
+                pij=(i,j,self.W)
+                cellParList.append(pij)
+        
+        MPRWork=MPR(AssignEachCell,cellParList)
+        Res=MPRWork.poolwork()
+        del MPRWork
+        
+        dcellBest={}  # infer the best node for each cell with probability
+        for i in Res:
+            [icell,iNode,pi]=i
+            if icell not in dcellBest:
+                dcellBest[icell]=[iNode,pi]
+            else:
+                if pi>dcellBest[icell][-1]:
+                    dcellBest[icell]=[iNode,pi]
+        
         newlli=[]
         ract=[]   # record the cells that got re-assigned 
-        for i in Res:
-            [cellID,bpi,pi]=i
+        for i in dcellBest:
+            cellID=i
+            [NodeID,pi]=dcellBest[cellID]
             cell=[item for item in self.Cells if item.ID==cellID][0]
-            ract=ract+[cell.ID] if cell.Label!=self.Nodes[bpi].ID else ract
-            cell.Label=self.Nodes[bpi].ID
+            Node=[item for item in self.Nodes if item.ID==NodeID][0]
+            ract=ract+[cell.ID] if cell.Label!=Node.ID else ract
+            # update the cell label 
+            cell.Label=Node.ID
             newlli.append(pi)
         print("# of re-assigned cells: %s"%(len(ract)))
+        #pdb.set_trace()
         
         # update the node cells
         for i in self.Nodes:
@@ -458,38 +436,21 @@ class Graph:
             
         newlli=sum(newlli)
         return newlli
-        
-    # assign cell function, private, can only be callced by ReAssign 
-    # this one has to be public (for multi-threading purpose)
-    def AssignCell(self,cellID):
-        cell=[item for item in self.Cells if item.ID==cellID][0]
-        print("cell : %s"%(cellID))
-        pi=[j.getAssignProbability(cell,self.W) for j in self.Nodes]
-        bpi=pi.index(max(pi))
-        return [cellID,bpi,max(pi)]
-        
-    
+           
     # get the likelihood for the given assignment  (current node cells)
     def getLikelihood(self,ncores=None):
         print("calculate the likelihood for current Graph cell assignment...")
-        pool=Pool(processes=ncores)
-        Tlli=pool.map_async(self.getLikelihoodEach, self.Cells)
-        pool.close()
-        pool.join()
-        Tlli=Tlli.get()
+        llhParList=[]
+        for i in self.Cells:
+            iNode=[item for item in self.Nodes if item.ID==i.Label][0]
+            llhParList.append((i,iNode,self.W))
+        
+        MPRWork=MPR(getLikelihoodEach,llhParList)
+        Tlli=MPRWork.poolwork()
+        del MPRWork
         Tlli=sum(Tlli)
         return Tlli
-    
-    # get the likelihood for node i based on the current cell assignment
-    # i : cell
-    def getLikelihoodEach(self,i):
-        nID=i.Label
-        #pdb.set_trace()
-        print("calculate the likelihood for the cell assignment of cell %s -> node %s"%(i.ID,nID))
-        iNode=[item for item in self.Nodes if item.ID==nID][0]
-        pi=iNode.getAssignProbability(i,self.W)
-        return pi
-        
+         
     # estimate the prior probability for each cluster (node)
     def getNodePR(self):
         TotalCells=len(self.Cells)
@@ -542,22 +503,15 @@ class Graph:
     # build edges
     def __buildEdges(self,ncores=None):
         print("building edges ...")
-        pool=Pool(processes=ncores,maxtasksperchild=1000)
-        P=pool.map_async(self.buildEachEdge,[item.ID for item in self.Nodes])
-        pool.close()
-        pool.join()
-        P=P.get()
+        edgeParList=[]
+        for i in self.Nodes:
+            edgeParList.append((i,self.GL,self.dTD,self.dTG,self.fChangeCut))
+            
+        MPRWork=MPR(buildEachEdge,edgeParList,ncores)
+        P=MPRWork.poolwork()
+        del MPRWork  # delete the multi-threading worker to avoid memory leak
         P=[item for item in P if item!=None]
-        #pdb.set_trace()
         return P
-    
-    # build each edge
-    def buildEachEdge(self,toNodeID):
-        toNode=[item for item in self.Nodes if item.ID==toNodeID][0]
-        if toNode.P:
-            p1=Path(toNode.P,toNode,self.Nodes,self.GL,self.dTD,self.dTG,self.dMb,self.fChangeCut)
-            return p1
-        return None
         
     # get eTF (expression based TFs) for each of the nodes 
     # note, adjustRTF has to stay in Graph class, although it's for each of the nodes
@@ -576,44 +530,23 @@ class Graph:
         except:
             print("error! Please check your input TF List file")
             sys.exit(0)
-
+        
+        RTFParList=[]
         eTFs=[item for item in GL if item in TFs]
-        pool=Pool(processes=ncores,maxtasksperchild=1000)
-        paraList=[(item.ID,eTFs) for item in self.Nodes]
-        Res=pool.starmap_async(self.adjustRTFEachNode,paraList)
-        pool.close()
-        pool.join()
-        Res=Res.get()
+        for i in self.Nodes:
+            RTFParList.append((i,eTFs,GL,self.fChangeCut))
+        
+        
+        MPRWork=MPR(adjustRTFEachNode,RTFParList,ncores)
+        Res=MPRWork.poolwork()
+        del MPRWork  # delete the multi-threading worker to avoid memory leak
+       
+        
         for i in Res:
             inode=[item for item in self.Nodes if item.ID==i[1]][0]
             inode.eTFs=i[0]
         
      
-        
-            
-    #adjustRTFEachNode : infer the eTFs for each of the nodes
-    def adjustRTFEachNode(self,NodeID,eTFs):
-        Node=list(filter(lambda x:x.ID==NodeID,self.Nodes))[0]
-        fcut=self.fChangeCut*0.5
-        GL=self.GL
-        print("infer expression-based TFs(eTFs) for node %s ..."%(Node.ID))
-        if Node.P:
-            NodeParent=Node.P
-            NodeSib=[item for item in Node.P.C if item!=Node]
-            NodeSibCells=[] if NodeSib==[] else [item.cells for item in NodeSib]
-            NodeParentCells=NodeParent.cells
-            peTFs=[]
-            for j in eTFs:
-                jdex=GL.index(j)
-                [flag,pvp,fcp]=tellDifference(Node.cells,NodeParentCells,NodeSibCells,jdex,fcut)
-                if flag:
-                    peTFs.append([pvp,j,fcp])
-            peTFs.sort()
-        else:
-            peTFs=[]
-        return [peTFs,NodeID]
-        
-    
     # build nodes
     def __buildNodes(self,Clusters,ncores=None):
         print("building nodes...")
@@ -626,23 +559,19 @@ class Graph:
         
         ClusterList=sorted(list(set(Clusters)),key=lambda x:int(x))
         ClusterList=map(lambda x:int(x), ClusterList)
-        pool=Pool(processes=ncores,maxtasksperchild=1000)
-    
-        AC=pool.map_async(self.buildEachNode,ClusterList) # list of all clusters
-        pool.close()
-        pool.join()
-        AC=AC.get()
+        
+        nodeParaList=[]
+        for i in ClusterList:
+            nodeID=i
+            nodeCells=[item for item in self.Cells if item.Label==nodeID]
+            nodeParaList.append((nodeID,nodeCells))
+        
+        MPRWork=MPR(buildEachNode,nodeParaList,ncores)
+        AC=MPRWork.poolwork()
+        del MPRWork  # delete the multi-threading worker to avoid memory leak
         AC=sorted(AC,key=lambda x:x.T)
         return AC
     
-    # build each node
-    # i is the node index
-    # can't be priviate for multi-threading purpose
-    def buildEachNode(self,i):
-        print("building node  %s..."%(i))
-        icells=[item for item in self.Cells if item.Label==i]
-        CC = Cluster(icells, int(i))
-        return CC
     
     # guess the root node of the tree
     def __guessRoot(self,pagaConnects,rootnodeID=None):
@@ -680,13 +609,86 @@ class Graph:
         for inode in self.Nodes:
             if inode.P!=None:
                 inode.P.C+=[inode]
-                
-# # 2. Global functions
+        
 
+# In[11]: Class MPR
+## Multiprocessing running
+class MPR:
+    def __init__(self,Func,DataList,ncores=None):
+        self.Func=Func
+        self.DataList=DataList
+        self.ncores=ncores
+        
+    def poolwork(self):
+        pool=Pool(processes=self.ncores,maxtasksperchild=1)
+        Res=pool.map_async(self.Func,self.DataList)
+        pool.close()
+        pool.join()
+        Res=Res.get()
+        return Res
 
+# In[12]: Functions for multi-threading 
+## can't use object functions as it will copy the entire object to the memory-> huge mem cost
 
-# tell whether the expression is unique in the specified node
-# 1,-1 (unique, 1: higher, -1: lower), 0 (nonunique)
+## build each node
+## inodePar is a tuple (nodeID,cells) for each node; cells-> all the cells in the node
+def buildEachNode(inodePar):
+    (nodeID,nodeCells)=inodePar
+    print("building node  %s..."%(nodeID))
+    CC = Cluster(nodeCells, int(nodeID))
+    return CC
+
+## build each edge
+def buildEachEdge(iEdgePar):
+    (toNode,GL,dTD,dTG,fChangeCut)=iEdgePar
+    if toNode.P:
+        p1=Path(toNode.P,toNode,GL,dTD,dTG,fChangeCut)
+        return p1
+    return None   
+
+##adjustRTFEachNode : infer the eTFs for each of the nodes
+def adjustRTFEachNode(RTFParList):
+    (Node,eTFs,GL,fcut)=RTFParList
+    print("infer expression-based TFs(eTFs) for node %s ..."%(Node.ID))
+    if Node.P:
+        NodeParent=Node.P
+        NodeSib=[item for item in Node.P.C if item!=Node]
+        NodeSibCells=[] if NodeSib==[] else [item.cells for item in NodeSib]
+        NodeParentCells=NodeParent.cells
+        peTFs=[]
+        for j in eTFs:
+            jdex=GL.index(j)
+            [flag,pvp,fcp]=tellDifference(Node.cells,NodeParentCells,NodeSibCells,jdex,fcut)
+            if flag:
+                peTFs.append([pvp,j,fcp])
+        peTFs.sort()
+    else:
+        peTFs=[]
+    return [peTFs,Node.ID]
+
+## assign cell function, private, can only be callced by ReAssign 
+## this one has to be public (for multi-threading purpose)
+## calculate the assign probability of cell-> Node
+def AssignEachCell(cellParList):
+    (cell,Node,W)=cellParList
+    print("cell : %s"%(cell.ID))
+    pi=Node.getAssignProbability(cell,W)
+    return [cell.ID,Node.ID,pi]
+       
+
+##get the likelihood for node i based on the current cell assignment
+#  cell
+def getLikelihoodEach(llhParList):
+    (cell,Node,W)=llhParList
+    print("calculate the likelihood for the cell assignment of cell %s -> node %s"%(cell.ID,Node.ID))
+    pi=Node.getAssignProbability(cell,W)
+    return pi
+
+# In[7]:Global functions
+## 2. Global functions
+
+## tell whether the expression is unique in the specified node
+## 1,-1 (unique, 1: higher, -1: lower), 0 (nonunique)
 def tellDifference(nodeCells,nodePCells,nodeSibCells,geneIndex,fcut=0.6):
     #print("tell whether current node is unique compared to its parent and siblings for TF %s"%(geneIndex))
     X=[item.E[0,geneIndex] for item in nodeCells]
@@ -732,25 +734,7 @@ def parseTFDNA(tfdna,GL):
         sys.exit(0)
 
     [dTD,dTG]=getTFDNAInteraction(TD,GL)
-    # TF binding in all input sequences (background)
-    dMb=batchScanPrior(GL,dTD)
-    return [dTD,dTG,dMb]
-
-
-# scanning TF-DNA interaction prior
-def batchScanPrior(A,dTD):
-    # dTD  -> dictionary of TF-DNA interaction
-    # A -> Gene list
-    K=list(dTD.keys())
-    K.sort()
-    dM={}
-    dA={item:0 for item in A}
-    for i in K:
-        GI=dTD[i]
-        GI=list(set([item for item in GI if item in dA]))
-        if len(GI)>0:
-            dM[i]=GI
-    return dM
+    return [dTD,dTG]
 
 # get TF-Gene interactions
 def getTFDNAInteraction(TD,GL):
@@ -839,18 +823,21 @@ def parseLR(etf,LRC):
     return out_etf
 
 
-# # 3. Main 
+# logMessgae
+def logMessage(logText,logfile):
+    print(logText)
+    logfile.write(logText)
+    logfile.flush()
 
-# In[3]:
+# In[8] InferGraph function
+## inferGraph based on given inputs
 def inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLOOP=5):   
     if os.path.exists(output)==False:
         os.mkdir(output)
     logfile=open("%s/runninglog.txt"%(output),'a')
     # log the start time
     tnow="The program starts at : %s \n"%(str(datetime.datetime.now()))
-    print(tnow)
-    logfile.write(tnow)
-    logfile.flush()
+    logMessage(tnow,logfile)
     
     # log the parameters 
     logTextPara="""\
@@ -868,10 +855,8 @@ def inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLO
     --maxloop %s \n\
     \n"""%(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLOOP)
     
-    print(logTextPara)
-    logfile.write(logTextPara)
-    logfile.flush()
-                              
+    logMessage(logTextPara,logfile)
+    
     #Read in the prerun results from the prerun (in h5ad format)
     print("loading back prerun results (h5ad) ...")
     prRes=anndata.read_h5ad(scg)
@@ -892,9 +877,7 @@ def inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLO
     
     # log reading cells
     logText1="reading cells ...\n"
-    print(logText1)
-    logfile.write(logText1)
-    logfile.flush()
+    logMessage(logText1,logfile)
     
     # list to store all cells
     AllCells=[]
@@ -911,19 +894,15 @@ def inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLO
     
     #log clustering
     logText2="clustering cells ...\n"
-    print(logText2)
-    logfile.write(logText2)
-    logfile.flush()
-    
+    logMessage(logText2,logfile)
+   
     #load clusters from the prerun results
     clusters=prRes.obs.leiden
     
     
     # log building graph (tree)
     logText3="building graph(tree) ...\n"
-    print(logText3)
-    logfile.write(logText3)
-    logfile.flush()
+    logMessage(logText3,logfile)
     
     G1=Graph(AllCells,tfdna,tfList,GL,clusters,pagaConnects,rootnodeID=rootnodeID,fChangeCut=fChangeCut,ncores=ncores)
    
@@ -944,22 +923,19 @@ def inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLO
         ILLH=ollh     # initial LLH 
         # log iterative refinment
         logText4="likelihood: %s\n"%(ollh)
-        print(logText4)
-        logfile.write(logText4)
-        logfile.flush()
+        logMessage(logText4,logfile)
    
     
     for loop in range(MAXLOOP):
-        print("->loop: %s"%(loop),file=logfile)
-        logfile.flush()
+        logLoopText="->loop: %s \n"%(loop)
+        logMessage(logLoopText,logfile)
+        
         nllh=G1.ReAssign(ncores)
         G1.llh=nllh
         increase_llh=(nllh-ollh)/abs(ILLH)
         # log iterative refinment
         logText5="likelihood: %s -> likelihood increase this loop: %s\n"%(nllh,increase_llh)
-        print(logText5)
-        logfile.write(logText5)
-        logfile.flush()
+        logMessage(logText5,logfile)
         prRes=G1.updateGraph(prRes,ncores)
         if increase_llh<llhcut:
             break 
@@ -969,17 +945,13 @@ def inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLO
         
         # log writing visualziation page
         logText6="updating the javascript powered visualization file (%s.html) under the InteractiveViz folder\n"%(scg_name)
-        print(logText6)
-        logfile.write(logText6)
-        logfile.flush()
+        logMessage(logText6,logfile)
         viz(scg_name,G1,output,prRes)
     
     # update the clustering and trajectory plots if there is a PGM iterative refinement
     if 'scdiff_cluster' in prRes.obs:
         logTextPlot="The stopping criteria is met, quit the loop \n\n Updating the PGM refined clustering (UMAP), trajectory (PAGA), and DE genes plots \n"
-        print(logTextPlot)
-        logfile.write(logTextPlot)
-        logfile.flush()
+        logMessage(logTextPlot,logfile)
         sc.settings.figdir = '%s/figures'%(output)
         sc.tl.paga(prRes,groups='scdiff_cluster')
         sc.pl.paga(prRes,show=False,save="_Traj.pdf")
@@ -992,25 +964,19 @@ def inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLO
     
         # log writing h5ad
         logText7="writing the results to a %s/%s file ...\n"%(output,scg_name)
-        print(logText7)
-        logfile.write(logText7)
-        logfile.flush()
+        logMessage(logText7,logfile)
         prRes.write_h5ad("%s/%s"%(output,scg_name),compression=9)
-        
         
     # log ending 
     logText8="job completed!\n"
-    print(logText8)
-    logfile.write(logText8)
-    logfile.flush()
+    logMessage(logText8,logfile)
     
     tnow="The program ends at : %s \n\n"%(str(datetime.datetime.now()))
-    print(tnow)
-    logfile.write(tnow)
-    logfile.flush()
-    
+    logMessage(tnow,logfile)
     logfile.close()
 
+# In[9]: Main
+## main function
 def main():
     # parse input arguments
     parser=argparse.ArgumentParser(description="scdiff2 main")
@@ -1046,7 +1012,7 @@ def main():
     
     inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootNode,llhcut,MAXLOOP)
 
-# In[9]:
+# In[10]: Program Entry
 if __name__=="__main__":
     main()
     
