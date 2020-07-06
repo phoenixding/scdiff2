@@ -29,6 +29,7 @@ import argparse
 import datetime
 import functools
 import math
+import multiprocessing as mp
 from multiprocessing import Pool
 import warnings
 warnings.simplefilter("ignore")
@@ -565,7 +566,7 @@ class Graph:
             nodeID=i
             nodeCells=[item for item in self.Cells if item.Label==nodeID]
             nodeParaList.append((nodeID,nodeCells))
-        
+        #pdb.set_trace()
         MPRWork=MPR(buildEachNode,nodeParaList,ncores)
         AC=MPRWork.poolwork()
         del MPRWork  # delete the multi-threading worker to avoid memory leak
@@ -625,6 +626,7 @@ class MPR:
         pool.close()
         pool.join()
         Res=Res.get()
+        del pool
         return Res
 
 # In[12]: Functions for multi-threading 
@@ -890,7 +892,9 @@ def inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLO
         ci=Cell(iid,ti,ei,li)
         AllCells.append(ci)
         print("load cell: "+str(i))
-       
+    # log # of cells in the data
+    logTextCells="Total # of cells: %s \n"%(len(AllCells))
+    logMessage(logTextCells,logfile)
     
     #log clustering
     logText2="clustering cells ...\n"
@@ -950,7 +954,7 @@ def inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLO
     
     # update the clustering and trajectory plots if there is a PGM iterative refinement
     if 'scdiff_cluster' in prRes.obs:
-        logTextPlot="The stopping criteria is met, quit the loop \n\n Updating the PGM refined clustering (UMAP), trajectory (PAGA), and DE genes plots \n"
+        logTextPlot="The stopping criteria is met, quit the loop \n\nUpdating the PGM refined clustering (UMAP), trajectory (PAGA), and DE genes plots \n"
         logMessage(logTextPlot,logfile)
         sc.settings.figdir = '%s/figures'%(output)
         sc.tl.paga(prRes,groups='scdiff_cluster')
@@ -1014,6 +1018,7 @@ def main():
 
 # In[10]: Program Entry
 if __name__=="__main__":
+    mp.set_start_method('spawn',force=True)
     main()
     
 

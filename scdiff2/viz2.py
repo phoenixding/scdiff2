@@ -88,9 +88,6 @@ def getAvgEx(A):
 # css template 
 def viz(scg_name,G1,output,prRes):
 	print("writing out Graph ...")
-	if os.path.exists(output)==False:
-		os.mkdir(output)
-		
 	css_template="""
 	
 	
@@ -2565,10 +2562,7 @@ def viz(scg_name,G1,output,prRes):
 	
 	"""
 	#-----------------------------------------------------------------------
-	
-	for i in G1.Nodes:
-		i.E=getAvgEx(i)
-	
+    
 	GJ=GtoJson(G1,prRes)	
 	serverPrefix="InteractiveViz"
 	if os.path.exists("%s/%s"%(output,serverPrefix))==False:

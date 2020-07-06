@@ -22,8 +22,9 @@ Here are a few key challenges that this updated version of scdiff2 strikes to ad
 As the scale of the single-cell RNA-seq datasets is ever-increasing (from hundred cells ->tens of thousand cells and even more. 
 The memory and time efficiency for the original scdiff is becoming a bottleneck of its application.  
 Here, we have been developing the next version, scdiff2, that uses HDF5, Sparse-matrix, and multi-threading techniques to reduce the resource requirement of the program while improving the efficiency.  Besides, we also incorporated many popular clustering and trajectory methods (mostly implemented by scanpy https://scanpy.readthedocs.io/en/stable)
-in a "prerun" program to learn an initial trajectory for future refinement (by HMM-like Probabilistic graphical models).  
-scdiff now can finish processing 40k cells (~10k genes/cell) within 4 hours @ a desktop: Ryzen 3500 6 cores, 16G RAM).   
+in a "prerun" program to learn an initial trajectory for the future PGM refinement (by HMM-like Probabilistic graphical models).  
+scdiff2 now can finish processing 40k cells (~10k genes/cell) within 4 hours @ a desktop: Ryzen 3500 6 cores, 16G RAM) with PGM refinement.
+Without the PGM refinement, it can complete in a few minutes ()
 
 2. New scdiff2 now is fully customizable! (It has many moving pieces and each piece can be customized/modified).  
 The selection of the root node (cells) is critical for the tree-structure cell trajectory inference. In scdiff2, we combined the trajectory from PAGA (https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1663-x)
@@ -213,7 +214,8 @@ Likelihood :  With PGM refinement (-1196.0434282645167)> Without PGM refinement 
 Running time:   With PGM refinement (~9mins) > without PGM refinement (~1min) => ~9 times slower 
 
 For best experience, please use >16G RAM and try to use any many threads (--ncores) as possible.  
-
+Increasing --ncores (# of allocated cpu cores) may slightly increase the memory usage (consider reduce --ncores if the memory resource is limited).   
+An a guideline, a 16G RAM would be enough for a reasonably big dataset (40k cells, 10k genes) with multi-threading of 12 cpu cores.  
 
 # CREDITS
  
