@@ -578,8 +578,10 @@ class Graph:
     def __guessRoot(self,pagaConnects,rootnodeID=None):
         if rootnodeID==None:
             self.Nodes=sorted(self.Nodes,key=lambda x:x.T)
+            timeSpan=abs(self.Nodes[-1].T-self.Nodes[0].T)
+            tcut=0.05
             firstNodeT=self.Nodes[0].T
-            firstNodes=[item for item in self.Nodes if int(item.T)==int(firstNodeT)]
+            firstNodes=[item for item in self.Nodes if int(item.T)-int(firstNodeT)<tcut]
             ConnectStrengthList=[]
             for i in firstNodes:
                 iConnectsum=sum(pagaConnects.loc[i.ID]+pagaConnects[i.ID])
