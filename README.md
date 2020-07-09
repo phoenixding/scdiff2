@@ -286,6 +286,15 @@ All user contributed scripts are highly welcomed (best to provide an example tes
 You can add the script via the github or email me @ the address given below.  
 __You credits__ will be __honored__ in the CREDITS section below.  
 
+Current UTILS scripts:  
+1)   [plotGene.py](utils/plotGene.py)  
+This script plots the expression of input genes in different clusters   
+2)   [buildInputExpressionFile.py](utils/buildInputExpressionFile.py)  
+Build the tab-delimited expression.E file that required by the pre-run from 10x genomics output (mtx.tsv, barcodes.tsv, genes.tsv)
+
+You use the -h command to look for the detailed usage of the scripts.  
+
+
 # CREDITS
  
 This software was developed by ZIV-system biology group @ Carnegie Mellon University.    

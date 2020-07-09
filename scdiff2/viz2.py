@@ -65,7 +65,7 @@ def GtoJson(G1,prRes):
     
     #build root node 
     rootID=G1.root.ID
-    pdb.set_trace()    
+    #pdb.set_trace()    
         
     EL=[] # Edge List
     for j in G1.Edges:
