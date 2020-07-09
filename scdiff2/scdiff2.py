@@ -585,7 +585,7 @@ class Graph:
                 iConnectsum=sum(pagaConnects.loc[i.ID]+pagaConnects[i.ID])
                 ConnectStrengthList.append([iConnectsum,i])
             ConnectStrengthList=sorted(ConnectStrengthList,key=lambda x:x[0], reverse=True)
-            root=ConnectStrengthList[0][0]
+            root=ConnectStrengthList[0][1]
         else:
             root=[item for item in self.Nodes if item.ID==int(rootnodeID)][0]
         return root
