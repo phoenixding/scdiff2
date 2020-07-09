@@ -546,7 +546,7 @@ class Graph:
         for i in Res:
             inode=[item for item in self.Nodes if item.ID==i[1]][0]
             inode.eTFs=i[0]
-        
+        del Res
      
     # build nodes
     def __buildNodes(self,Clusters,ncores=None):
