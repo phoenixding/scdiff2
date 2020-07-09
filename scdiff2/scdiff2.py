@@ -581,7 +581,7 @@ class Graph:
             timeSpan=abs(self.Nodes[-1].T-self.Nodes[0].T)
             tcut=0.05
             firstNodeT=self.Nodes[0].T
-            firstNodes=[item for item in self.Nodes if int(item.T)-int(firstNodeT)<tcut]
+            firstNodes=[item for item in self.Nodes if item.T-firstNodeT<tcut]
             ConnectStrengthList=[]
             for i in firstNodes:
                 iConnectsum=sum(pagaConnects.loc[i.ID]+pagaConnects[i.ID])
