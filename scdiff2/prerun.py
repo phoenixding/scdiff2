@@ -102,7 +102,7 @@ def main():
     required.add_argument('-i','--input',required=True,help='input single cell RNA-seq expression data')
     required.add_argument('-o','--output',required=True,help='output directory')
     optional.add_argument('-f','--format',required=False, default='raw', help='the format of input expression, either raw/norm (raw: raw read counts, norm: normalized expression')
-    optional.add_arguments('--mindisp',required=False,default=0.15,help='the dispersion cutoff to filter genes (genes with dipsersion < this cutoff will be filtered')
+    optional.add_argument('--mindisp',required=False,default=0.15,help='the dispersion cutoff to filter genes (genes with dipsersion < this cutoff will be filtered')
     args = parser.parse_args()
     exFn=args.input
     outdir=args.output 
