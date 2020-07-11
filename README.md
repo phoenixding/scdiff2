@@ -78,6 +78,13 @@ __PLEASE NOTE__: python 2.7 is no longer supported by the scdiff software suite.
 	-- scanpy>=1.5  
 	-- pandas>=0.23  
 	-- h5py>=2.10  
+	-- ipython-graph>=0.8.0  
+	-- leidenalg>=0.8.0  
+make sure you have all necessary tools fro complication, In ubuntu, this can be installed using   
+```
+sudo apt-get install build-essential
+```
+
 The python setup.py script (or pip) will try to install these packages automatically.
 Also, the pip3 installation will install those libraries automatically.  However, please install them manually if, by any reason, the automatic 
 installation fails. 
