@@ -80,7 +80,7 @@ __PLEASE NOTE__: python 2.7 is no longer supported by the scdiff software suite.
 	-- h5py>=2.10  
 	-- ipython-graph>=0.8.0  
 	-- leidenalg>=0.8.0  
-make sure you have all necessary tools fro complication, In ubuntu, this can be installed using   
+make sure you have all necessary tools for complication, In ubuntu, this can be installed using   
 ```
 sudo apt-get install build-essential
 ```
