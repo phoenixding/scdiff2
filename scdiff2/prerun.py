@@ -107,7 +107,7 @@ def main():
     exFn=args.input
     outdir=args.output 
     iformat=args.format
-    mindisp=args.mindisp
+    mindisp=float(args.mindisp)
     prerun(exFn,outdir,iformat,mindisp)
 
 if __name__=="__main__":
