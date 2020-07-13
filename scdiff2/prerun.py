@@ -29,7 +29,7 @@ import argparse
 import matplotlib
 matplotlib.use('Agg')
 
-def prerun(exFn,outdir,iformat):
+def prerun(exFn,outdir,iformat,mindisp):
 	# # read in tab.txt file and save it to h5file 
 	if os.path.exists(outdir)==False:
 		os.mkdir(outdir)
@@ -59,7 +59,7 @@ def prerun(exFn,outdir,iformat):
 		sc.pp.log1p(d1)
 			
 	# # filtering genes based on dispersion
-	sc.pp.highly_variable_genes(d1, min_mean=0.0125, max_mean=5, min_disp=0.15)
+	sc.pp.highly_variable_genes(d1, min_mean=0.0125, max_mean=5, min_disp=mindisp)
 	sc.pl.highly_variable_genes(d1,show=False, save=".pdf")
 	d1 = d1[:, d1.var.highly_variable]
 
@@ -106,8 +106,9 @@ def main():
     args = parser.parse_args()
     exFn=args.input
     outdir=args.output 
-    iformat=args.format 
-    prerun(exFn,outdir,iformat)
+    iformat=args.format
+    mindisp=args.mindisp
+    prerun(exFn,outdir,iformat,mindisp)
 
 if __name__=="__main__":
 	main()
