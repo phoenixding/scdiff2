@@ -29,7 +29,7 @@ import argparse
 import matplotlib
 matplotlib.use('Agg')
 
-def prerun(exFn,outdir,iformat,mindisp):
+def prerun(exFn,outdir,iformat,mindisp,cluRes):
 	# # read in tab.txt file and save it to h5file 
 	if os.path.exists(outdir)==False:
 		os.mkdir(outdir)
@@ -76,7 +76,7 @@ def prerun(exFn,outdir,iformat,mindisp):
 	sc.tl.diffmap(d1)
 
 	# # clustering... 
-	sc.tl.leiden(d1)
+	sc.tl.leiden(d1,resolution=cluRes)
 	sc.tl.paga(d1)
 	sc.pl.paga(d1,show=False,save="_Traj.pdf")
 	sc.tl.umap(d1,init_pos='paga')
@@ -103,12 +103,14 @@ def main():
     required.add_argument('-o','--output',required=True,help='output directory')
     optional.add_argument('-f','--format',required=False, default='raw', help='the format of input expression, either raw/norm (raw: raw read counts, norm: normalized expression')
     optional.add_argument('--mindisp',required=False,default=0.15,help='the dispersion cutoff to filter genes (genes with dipsersion < this cutoff will be filtered')
+    optional.add_argument('--cluRes',required=False, default=1, help="The resolution parameter for the leiden clustering method")
     args = parser.parse_args()
     exFn=args.input
     outdir=args.output 
     iformat=args.format
     mindisp=float(args.mindisp)
-    prerun(exFn,outdir,iformat,mindisp)
+    cluRes=float(args.cluRes)
+    prerun(exFn,outdir,iformat,mindisp,cluRes)
 
 if __name__=="__main__":
 	main()
