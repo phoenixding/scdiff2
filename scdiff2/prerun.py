@@ -30,69 +30,72 @@ import matplotlib
 matplotlib.use('Agg')
 
 def prerun(exFn,outdir,iformat,mindisp,cluRes):
-	# # read in tab.txt file and save it to h5file 
-	if os.path.exists(outdir)==False:
-		os.mkdir(outdir)
+    # # read in tab.txt file and save it to h5file 
+    if os.path.exists(outdir)==False:
+        os.mkdir(outdir)
 
-	TabFile(exFn).toH5("\t","%s/%s"%(outdir,exFn.split("/")[-1]),['index','time','label'])
+    TabFile(exFn).toH5("\t","%s/%s"%(outdir,exFn.split("/")[-1]),['index','time','label'])
 
-	H5File("%s/%s.h5"%(outdir,exFn)).toSparseAnnData("%s/%s.h5ad"%(outdir,exFn),BLOCK=5000)
-	# # Load in h5 file and convert it to anndata
-	d1=anndata.read_h5ad("%s/%s.h5ad"%(outdir,exFn))
-
-
-	sc.settings.figdir = '%s/figures'%(outdir)
-	# # Pre-processing ...
-	print("pre-processing...")
-	sc.pp.filter_cells(d1,min_genes=200)
-	sc.pp.filter_genes(d1,min_cells=3)
-
-	if iformat=='raw':
-		d1.var['mt'] = d1.var_names.str.startswith('MT-')
-		# # plot n_genes, total_counts, and mt counts
-		sc.pp.calculate_qc_metrics(d1, qc_vars=['mt'], percent_top=None, log1p=False, inplace=True)
-		#sc.pl.violin(d1, ['n_genes_by_counts', 'total_counts', 'pct_counts_mt'],jitter=0.4, multi_panel=True, show=False, save="_qc.pdf")
-		sc.pl.scatter(d1, x='total_counts', y='pct_counts_mt',show=False, save="_mt.pdf")
-		sc.pl.scatter(d1, x='total_counts', y='n_genes_by_counts',show=False, save="_n_genes.pdf")
-		d1 = d1[d1.obs.pct_counts_mt < 40, :]
-		sc.pp.normalize_total(d1, target_sum=1e4)
-		sc.pp.log1p(d1)
-			
-	# # filtering genes based on dispersion
-	sc.pp.highly_variable_genes(d1, min_mean=0.0125, max_mean=5, min_disp=mindisp)
-	sc.pl.highly_variable_genes(d1,show=False, save=".pdf")
-	d1 = d1[:, d1.var.highly_variable]
-
-	# # Removing batch effects
-	#sc.pp.regress_out(d1, ['total_counts', 'pct_counts_mt'])
-	#sc.pp.scale(d1, max_value=10)
-
-	# # Dimension reduction
-	sc.tl.pca(d1, svd_solver='arpack')
+    H5File("%s/%s.h5"%(outdir,exFn)).toSparseAnnData("%s/%s.h5ad"%(outdir,exFn),BLOCK=5000)
+    # # Load in h5 file and convert it to anndata
+    d1=anndata.read_h5ad("%s/%s.h5ad"%(outdir,exFn))
 
 
-	# # Computing the neighborhood graph
-	sc.pp.neighbors(d1, n_neighbors=15, n_pcs=50)
-	sc.tl.diffmap(d1)
+    sc.settings.figdir = '%s/figures'%(outdir)
+    # # Pre-processing ...
+    print("pre-processing...")
+    sc.pp.filter_cells(d1,min_genes=200)
+    sc.pp.filter_genes(d1,min_cells=3)
 
-	# # clustering... 
-	sc.tl.leiden(d1,resolution=cluRes)
-	sc.tl.paga(d1)
-	sc.pl.paga(d1,show=False,save="_Traj.pdf")
-	sc.tl.umap(d1,init_pos='paga')
-	sc.pl.umap(d1,color=['leiden','time'],legend_loc='on data',show=False,save="_clustering.pdf")
+    if iformat=='raw':
+        MTFlag1=d1.var_names.str.upper().str.startswith('MT-')
+        MTFlag2=d1.var_names.str.upper().str.startswith('MT.')
+        MTFlag=[bool(a+b) for a,b in zip(MTFlag1,MTFlag2)]
+        d1.var['mt'] = MTFlag
+        # # plot n_genes, total_counts, and mt counts
+        sc.pp.calculate_qc_metrics(d1, qc_vars=['mt'], percent_top=None, log1p=False, inplace=True)
+        #sc.pl.violin(d1, ['n_genes_by_counts', 'total_counts', 'pct_counts_mt'],jitter=0.4, multi_panel=True, show=False, save="_qc.pdf")
+        sc.pl.scatter(d1, x='total_counts', y='pct_counts_mt',show=False, save="_mt.pdf")
+        sc.pl.scatter(d1, x='total_counts', y='n_genes_by_counts',show=False, save="_n_genes.pdf")
+        d1 = d1[d1.obs.pct_counts_mt < 40, :]
+        sc.pp.normalize_total(d1, target_sum=1e4)
+        sc.pp.log1p(d1)
+            
+    # # filtering genes based on dispersion
+    sc.pp.highly_variable_genes(d1, min_mean=0.0125, max_mean=5, min_disp=mindisp)
+    sc.pl.highly_variable_genes(d1,show=False, save=".pdf")
+    d1 = d1[:, d1.var.highly_variable]
+
+    # # Removing batch effects
+    #sc.pp.regress_out(d1, ['total_counts', 'pct_counts_mt'])
+    #sc.pp.scale(d1, max_value=10)
+
+    # # Dimension reduction
+    sc.tl.pca(d1, svd_solver='arpack')
 
 
-	# # get DE genes for each of the clusters
-	sc.tl.rank_genes_groups(d1, 'leiden', method='wilcoxon')
-	sc.pl.rank_genes_groups(d1, n_genes=25, sharey=False,show=False, save="_global_DE_genes.pdf")
+    # # Computing the neighborhood graph
+    sc.pp.neighbors(d1, n_neighbors=15, n_pcs=50)
+    sc.tl.diffmap(d1)
+
+    # # clustering... 
+    sc.tl.leiden(d1,resolution=cluRes)
+    sc.tl.paga(d1)
+    sc.pl.paga(d1,show=False,save="_Traj.pdf")
+    sc.tl.umap(d1,init_pos='paga')
+    sc.pl.umap(d1,color=['leiden','time'],legend_loc='on data',show=False,save="_clustering.pdf")
 
 
-	# # 
-	d1.write_h5ad("%s/%s.h5ad"%(outdir,exFn),compression=9)
-	print("\n\n>>>>------------------------------------------------<<<<")
-	print("prerun completed! please run scdiff2 for the second pass")
-	return d1
+    # # get DE genes for each of the clusters
+    sc.tl.rank_genes_groups(d1, 'leiden', method='wilcoxon')
+    sc.pl.rank_genes_groups(d1, n_genes=25, sharey=False,show=False, save="_global_DE_genes.pdf")
+
+
+    # # 
+    d1.write_h5ad("%s/%s.h5ad"%(outdir,exFn),compression=9)
+    print("\n\n>>>>------------------------------------------------<<<<")
+    print("prerun completed! please run scdiff2 for the second pass")
+    return d1
 
 def main():
     parser=argparse.ArgumentParser(description="scdiff2 pre-run")
@@ -113,4 +116,4 @@ def main():
     prerun(exFn,outdir,iformat,mindisp,cluRes)
 
 if __name__=="__main__":
-	main()
+    main()
