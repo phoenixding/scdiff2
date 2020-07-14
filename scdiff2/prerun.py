@@ -62,7 +62,7 @@ def prerun(exFn,outdir,iformat,mindisp,cluRes,skipGeneFilter):
         sc.pp.log1p(d1)
             
     # # filtering genes based on dispersion
-    if skipGeneFilter!=None:
+    if (skipGeneFilter!='Yes') and (skipGeneFilter!='YES'):
         sc.pp.highly_variable_genes(d1, min_mean=0.0125, max_mean=5, min_disp=mindisp)
         sc.pl.highly_variable_genes(d1,show=False, save=".pdf")
         d1 = d1[:, d1.var.highly_variable]
@@ -108,7 +108,7 @@ def main():
     optional.add_argument('-f','--format',required=False, default='raw', help='the format of input expression, either raw/norm (raw: raw read counts, norm: normalized expression')
     optional.add_argument('--mindisp',required=False,default=0.15,help='the dispersion cutoff to filter genes (genes with dipsersion < this cutoff will be filtered')
     optional.add_argument('--cluRes',required=False, default=1, help="The resolution parameter for the leiden clustering method")
-    optional.add_argument('--skipGeneFilter', required=False, default=None, help="whether to skip the gene filtering")
+    optional.add_argument('--skipGeneFilter', required=False, default=None, help="whether to skip the gene filtering (Yes to skip)")
     args = parser.parse_args()
     exFn=args.input
     outdir=args.output 
