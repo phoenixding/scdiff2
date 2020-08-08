@@ -884,7 +884,7 @@ def inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLO
     clusters=prRes.obs.leiden
 
     # paga connectivity
-    clusterIDs=[int(item) for item in list(clusters.unique())]
+    clusterIDs=sorted([int(item) for item in list(clusters.unique())])
     pagaConnects=pd.DataFrame(data=prRes.uns['paga']['connectivities_tree'].toarray())
     pagaConnects.index=clusterIDs
     pagaConnects.columns=clusterIDs
