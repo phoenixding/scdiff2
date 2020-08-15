@@ -11,6 +11,7 @@ import argparse
 import scipy.io
 import csv
 from scipy.sparse import csr_matrix
+import gzip
 
 def main():
 	parser=argparse.ArgumentParser(description="convert 10x genomics mtx.matrix, barcodes.csv, and genes.tsv to a tab expression file that scdiff2 accepts")
@@ -28,21 +29,20 @@ def main():
 	try:
 		mat=scipy.io.mmread(f"{exFn}/matrix.mtx.gz")
 		mat=mat.transpose()
-		
-		feature_ids = [row[0] for row in csv.reader(gzip.open(f"{exFn}/genes.tsv.gz"), delimiter="\t")]
-		gene_names = [row[1] for row in csv.reader(gzip.open(f"{exFn}/genes.tsv.gz"), delimiter="\t")]
-		barcodes = [row[0] for row in csv.reader(gzip.open(f"{exFn}/barcodes.tsv"), delimiter="\t")]
+		feature_ids = [row[0] for row in csv.reader(gzip.open(f"{exFn}/genes.tsv.gz","rt"), delimiter="\t")]
+		gene_names = [row[1] for row in csv.reader(gzip.open(f"{exFn}/genes.tsv.gz","rt"), delimiter="\t")]
+		barcodes = [row[0] for row in csv.reader(gzip.open(f"{exFn}/barcodes.tsv.gz","rt"), delimiter="\t")]
 	except:
 		mat=scipy.io.mmread(f"{exFn}/matrix.mtx")
 		mat=mat.transpose()
-		gene_names = [row[1] for row in csv.reader(open(f"{exFn}/genes.tsv"), delimiter="\t")]
-		barcodes = [row[0] for row in csv.reader(open(f"{exFn}/barcodes.tsv"), delimiter="\t")]
+		gene_names = [row[1] for row in csv.reader(open(f"{exFn}/genes.tsv","rt"), delimiter="\t")]
+		barcodes = [row[0] for row in csv.reader(open(f"{exFn}/barcodes.tsv","rt"), delimiter="\t")]
 	
 	mat=csr_matrix(mat)
 	if os.path.exists(f"{exFn}/meta.tsv.gz"):
-		meta=[row[1] for row in csv.read(gzip.open(f"{exFn}/meta.tsv.gz"),delimiter="\t")]
+		meta=[row[1] for row in csv.read(gzip.open(f"{exFn}/meta.tsv.gz","rt"),delimiter="\t")]
 	elif os.path.exists(f"{exFn}/meta.tsv"):
-		meta=[row for row in csv.read(open(f"{exFn}/meta.tsv"),delimiter="\t")]
+		meta=[row for row in csv.read(open(f"{exFn}/meta.tsv","rt"),delimiter="\t")]
 	else:
 		meta=[]
 	
