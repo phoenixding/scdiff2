@@ -8,19 +8,19 @@
 # Author: Jun Ding
 # Email: junding (at) cs (dot) cmu (dot) edu
 # Date: June. 29th, 2020
-# 
+#
 # This scdiff software suite is desinged to infer the clusters, trajectories, and regulatory
 # networks underlying dynamic biological process (e.g., cell differntiation, disease progression)
 # based on given time-series single-cell expression input data.  Please use "scdiff -h" for the detailed usage.
-# 
-# This software is freely avaible for academic uses. 
+#
+# This software is freely avaible for academic uses.
 # For any commerical usage, please contact me at the email address above.
 # All rights reserved.
 # Please don NOT modify the above statement.
 
 # In[2]: Import modules
-## Log in needed modules 
-    
+## Log in needed modules
+
 import pdb,sys,os,random
 import numpy as np
 import scanpy as sc
@@ -34,7 +34,7 @@ from multiprocessing import Pool
 import warnings
 warnings.simplefilter("ignore")
 
-from File import * 
+from File import *
 from scipy.stats import spearmanr
 from scipy.stats import pearsonr
 from scipy.stats import ttest_ind
@@ -64,7 +64,7 @@ class Cell:
         self.E=Expression
         self.Label=None # Label for clustering purpose
         self.typeLabel=typeLabel
-        
+
 
 
 
@@ -76,29 +76,29 @@ class Cluster:
         self.ID=int(ID)                                  # ID (must be integer=> matches the cell labels from the pre-run results)
         self.P=None                                      # parent cluster
         self.C=[]                                        # child clusters
-        self.EMatrix=self.__getEMatrix()               # get sparse (csc sparse) expression matrix for all the cells in the Cluster 
+        self.EMatrix=self.__getEMatrix()               # get sparse (csc sparse) expression matrix for all the cells in the Cluster
         [self.E,self.R]=self.__getAvgVarE()              # initial mean,variance expression
         [self.mT,self.rT]=self.__getAvgVarT()            # initial mean,variance Time
-        self.T=self.mT                                   # Time 
+        self.T=self.mT                                   # Time
         self.PR=0                                        # Prior probability of cluster
-            
-    
+
+
     #--------------------------------------------------------------
     ## public functions:
-    
+
     # calculate the total probability of a cell belonging to given cluster (based on expression, and time)
     def getAssignProbability(self,cell,W,TW=0.5):
-        # public interface to calculate probability of cell assignment 
+        # public interface to calculate probability of cell assignment
         # W: Gene weight
         # TW: time weight
         #pdb.set_trace()
         print("assign cell %s"%(cell.ID))
-        PG = self.__getCellProbability(cell,W) 
+        PG = self.__getCellProbability(cell,W)
         PT=TW*norm.logpdf(cell.T,self.mT,self.rT)
         PR = math.log(self.PR)
         P=PG+PT+PR
         return P
-    
+
     # get expressed TFs of the cluster
     def getExpressedTF(self,TFList,GL):
         print("get expressed TFs in node %s ..."%(self.ID))
@@ -106,7 +106,7 @@ class Cluster:
         EXCUT=0.15   # at least 1-EXCUT non-zero => expressed
         indptr=self.EMatrix.indptr
         M=len(self.cells)
-        
+
         for i in TFList:
             if i in GL:
                 ix=GL.index(i)
@@ -121,7 +121,7 @@ class Cluster:
         # priviate function, can't be accessed outside, can only be called by other functions of the class
         # cell: a cell
         # mu,sm
-        # return mean logpdf (log of the probability density function) => log joint density 
+        # return mean logpdf (log of the probability density function) => log joint density
         mu=self.E
         sm=self.R
         N=len(mu)
@@ -132,7 +132,7 @@ class Cluster:
             p=math.log(W[i])+norm.logpdf(cx[i],mu[i],sm[i])
             P.append(p)
         return np.mean(P)
-    
+
     # get the mean,sigma for the time of cells in the cluster
     def __getAvgVarT(self):
         iT=[item.T for item in self.cells]
@@ -140,25 +140,25 @@ class Cluster:
         imu=round(np.mean(iT),2)
         ivar=round(np.var(iT)+pCount,2)
         return [imu,ivar]
-        
+
     # get the sparse cell expression matrix
     # return a private expression matrix (sparse)
     def __getEMatrix(self):
         print("get sparse expression matrix for %s ..."%(self.ID))
         M=len(self.cells)
         N=self.cells[0].E.shape[1]
-        mtx=lil_matrix((M,N)) # lil_matrix (sparse) to store the cell expression 
+        mtx=lil_matrix((M,N)) # lil_matrix (sparse) to store the cell expression
         for i in range(M):
             mtx[i]=self.cells[i].E
             print("cluster %s, cell %s"%(self.ID,i))
-        mtx=csc_matrix(mtx)  # convert to csc matrix for efficent column operations 
+        mtx=csc_matrix(mtx)  # convert to csc matrix for efficent column operations
         return mtx
-        
+
     # get the mean, sigma for the expression of cells in the cluster
     def __getAvgVarE(self):
         AE=[]
         pcount=0.01
-        R=[] 
+        R=[]
         (M,N)=self.EMatrix.shape
         for i in range(N):
             ei=self.EMatrix.getcol(i)
@@ -177,24 +177,24 @@ class Path:
         print("build edge %s->%s"%(fromNode.ID,toNode.ID))
         self.fromNode=fromNode                                                  # from Node
         self.toNode=toNode                                                      # to Node
-        
+
         self.FC=self.__getFC(GL)                                                      # fold change for all genes
-        self.diffF=self.__getDiffGene(fChangeCut)                                     # get differnetial genes based on log fold change 
+        self.diffF=self.__getDiffGene(fChangeCut)                                     # get differnetial genes based on log fold change
         self.diffT=self.__getDiffGeneTest(GL)                                         # get differential genes based on student t- test
         self.diffG=[item for item in self.diffF if item in self.diffT]                # get differnetial genes based on fold change and student t-test
-       
+
         self.ptf=self.fromNode.getExpressedTF(dTD.keys(),GL)                         # expressed TFs
         self.etf=self.__getetf(dTD,dTG,GL,fChangeCut)                            # transcription factors and diff TFs
-        
-        #---------------------------------------------------------------------- 
+
+        #----------------------------------------------------------------------
         self.B=self.__getTransition(dTD,dTG,GL,fChangeCut)                       # transition offset
         self.Q=self.__getProcessVariance(GL,MU=self.fromNode.E)                      # initial process variance
-          
+
     #--------------------------------------------------------------
     # public functons
 
     #-----------------------------------------------------------------
-    # private functions 
+    # private functions
     # calculate fold (log) change between fromNode (cluster) and toNode (cluster)
     def __getFC(self,GL):
         def logfc(x, y):
@@ -223,23 +223,23 @@ class Path:
     def __getDiffGeneTest(self,GL):
         print("get differential genes based on T test for edge %s->%s"%(self.fromNode.ID,self.toNode.ID))
         cut=5e-2
-        
+
         XM=len(self.fromNode.cells)
         YM=len(self.toNode.cells)
         N=len(GL)
-        
+
         X=lil_matrix((XM,N))
         Y=lil_matrix((YM,N))
-        
+
         for i in range(len(self.fromNode.cells)):
             X[i]=self.fromNode.cells[i].E
-            
+
         for i in range(len(self.toNode.cells)):
             Y[i]=self.toNode.cells[i].E
-        
+
         X=X.tocsc()
         Y=Y.tocsc()
-        
+
         TT=[]
         for i in range(len(GL)):
             Xi=X.getcol(i).toarray()
@@ -259,7 +259,7 @@ class Path:
     # review erniched TF
 
     def __getetf(self,dTD,dTG,GL,FCUT):
-        # strategy 1 (new): 
+        # strategy 1 (new):
         # using manwhiteneyu test => find TF whose target genes are "signiciantly" differential along the edge  (compared with all target genes -background)
         def getEnrichTF():
             pcut=0.1
@@ -274,7 +274,7 @@ class Path:
                     entf.append([pAB,i])
             entf=sorted(entf,key=lambda x:x[0])
             return entf
-        
+
         print("infer TFs based on their target genes for edge %s->%s"%(self.fromNode.ID, self.toNode.ID))
         etf=getEnrichTF()
         etf=[item for item in etf if item[1] in self.ptf]
@@ -284,7 +284,7 @@ class Path:
     def __getTransition(self,dTD,dTG,GL,FCUT=0.6):
         G = self.FC
         etfID = [item[1] for item in self.etf]
-        dR={0:2,1:-2,2:0} 
+        dR={0:2,1:-2,2:0}
         try:
             [X, Y,U,D] = buildTrain(G, dTG, etfID,GL,FCUT)
             dR = {0: U, 1: D, 2: 0}
@@ -310,8 +310,8 @@ class Path:
             YY = [0 if G.loc[item]['logfc'] > FCUT else 1 if G.loc[item]['logfc'] < -1 * FCUT else 2 for item in GL]
         YY = [dR[item] for item in YY]
         return YY
-    
-    # get process noise 
+
+    # get process noise
     def __getProcessVariance(self,GL,MU=None):
         # MU : average at time t-1, vector
         # X1: all observation at time point t
@@ -320,7 +320,7 @@ class Path:
         Q=[]
         X1=self.fromNode.EMatrix
         X2=self.toNode.EMatrix
-        
+
         if MU==None:
             for i in range(N):
                 x1=X1.getcol(i) # all observation for gene i at time t-1
@@ -339,7 +339,7 @@ class Path:
         return Q
 
 # In[6]:Graph(Tree)
-## class Graph 
+## class Graph
 class Graph:
     def __init__(self,Cells,tfdna,etfile,GL,Clusters,pagaConnects,rootnodeID=None,fChangeCut=0.6,ncores=None):
         # native graph attributes
@@ -348,66 +348,66 @@ class Graph:
         self.fChangeCut=fChangeCut
         self.etfile=etfile
         self.GL=GL
-        self.W=self.getW() # naive  weight for each of the genes 
-        
-        
-        # nodes 
+        self.W=self.getW() # naive  weight for each of the genes
+
+
+        # nodes
         self.Nodes=self.__buildNodes(Clusters,ncores)
-        self.root= self.__guessRoot(pagaConnects,rootnodeID) 
+        self.root= self.__guessRoot(pagaConnects,rootnodeID)
         self.__connectNodes(pagaConnects) # connect the nodes to build the tree
         self.getNodePR()
         self.__adjustRTFs(ncores) # get eTFs for each of hte nodes
-        
+
         # edges
         [self.dTD,self.dTG]=parseTFDNA(tfdna,GL)
         self.Edges=self.__buildEdges(ncores)
         self.Paths = self.__buildPaths()
-        
-        # likelihood 
+
+        # likelihood
         self.llh=None
-        
+
     ##-------------------------------------------------------------------------
     # public functions (can be reached outside of the class to update and process the graph)
-        
+
     # update the graph (tree)
     def updateGraph(self,prRes,ncores=None):
         print("update the graph...")
-        
+
         GL=[item.upper() for item in prRes.var.index]
         prRes.obs['scdiff_cluster']=[item.Label for item in self.Cells]
         prRes.obs=prRes.obs.astype('category')
-        
+
         # update the paga connectivity
         sc.tl.paga(prRes,groups='scdiff_cluster')
         pagaConnects=pd.DataFrame(data=prRes.uns['paga']['connectivities_tree'].toarray())
-        
+
         # update nodes
         self.Nodes=self.__buildNodes(prRes.obs.scdiff_cluster)
         self.root=self.__guessRoot(pagaConnects,self.root.ID)
         self.__connectNodes(pagaConnects)
-        self.__adjustRTFs(ncores) 
+        self.__adjustRTFs(ncores)
         self.getNodePR()
-        
+
         # update edges
         self.Edges=self.__buildEdges()
         self.Paths = self.__buildPaths()
         return prRes
-        
+
     # re-assign the cells (assign new cluster labels to all cells)
     def ReAssign(self,ncores=None):
         # re-assign
         print("re-assigning all cells to the tree")
-        
+
         cellParList=[]
         for i in self.Cells:
             for j in self.Nodes:
                 pij=(i,j,self.W)
                 cellParList.append(pij)
-        
+
         MPRWork=MPR(AssignEachCell,cellParList)
         Res=MPRWork.poolwork()
         del MPRWork
-        
+
         dcellBest={}  # infer the best node for each cell with probability
         for i in Res:
             [icell,iNode,pi]=i
@@ -416,28 +416,28 @@ class Graph:
             else:
                 if pi>dcellBest[icell][-1]:
                     dcellBest[icell]=[iNode,pi]
-        
+
         newlli=[]
-        ract=[]   # record the cells that got re-assigned 
+        ract=[]   # record the cells that got re-assigned
         for i in dcellBest:
             cellID=i
             [NodeID,pi]=dcellBest[cellID]
             cell=[item for item in self.Cells if item.ID==cellID][0]
             Node=[item for item in self.Nodes if item.ID==NodeID][0]
             ract=ract+[cell.ID] if cell.Label!=Node.ID else ract
-            # update the cell label 
+            # update the cell label
             cell.Label=Node.ID
             newlli.append(pi)
         print("# of re-assigned cells: %s"%(len(ract)))
         #pdb.set_trace()
-        
+
         # update the node cells
         for i in self.Nodes:
             i.cells=[item for item in self.Cells if item.Label==i.ID]
-            
+
         newlli=sum(newlli)
         return newlli
-           
+
     # get the likelihood for the given assignment  (current node cells)
     def getLikelihood(self,ncores=None):
         print("calculate the likelihood for current Graph cell assignment...")
@@ -445,20 +445,20 @@ class Graph:
         for i in self.Cells:
             iNode=[item for item in self.Nodes if item.ID==i.Label][0]
             llhParList.append((i,iNode,self.W))
-        
+
         MPRWork=MPR(getLikelihoodEach,llhParList)
         Tlli=MPRWork.poolwork()
         del MPRWork
         Tlli=sum(Tlli)
         return Tlli
-         
+
     # estimate the prior probability for each cluster (node)
     def getNodePR(self):
         TotalCells=len(self.Cells)
         for i in self.Nodes:
             niCells=len(i.cells)
             i.PR = niCells*1.0/TotalCells
-            
+
     # get W (weight for each of the genes)
     def getW(self,MW=0.5):
         # MW: minimum weight
@@ -466,12 +466,12 @@ class Graph:
         GL=self.GL
         M=len(self.Cells) # M cells
         N=len(GL)         # N genes
-        
-        mtx=lil_matrix((M,N)) # lil_matrix (sparse) to store the cell expression 
+
+        mtx=lil_matrix((M,N)) # lil_matrix (sparse) to store the cell expression
         for i in range(M):
             mtx[i]=self.Cells[i].E
             print("pull expression from cell %s"%(i))
-        
+
         mtx=csc_matrix(mtx)       #  convert to csr matrix, efficient for column operations
         indptr=mtx.indptr
         print("get gene weights ...")
@@ -480,7 +480,7 @@ class Graph:
             W.append(inz)
         W=[max(MW,item*1.0/M) for item in W]
         return W
-        
+
     #----------------------------------------------------------------------------------------
     # private functions (can only be reached from other functions in the graph calss)
     # building the path (from root to the leaves) of the tree
@@ -500,21 +500,21 @@ class Graph:
                 if cp!=[]:
                     CP.append(cp)
         return CP
-        
+
     # build edges
     def __buildEdges(self,ncores=None):
         print("building edges ...")
         edgeParList=[]
         for i in self.Nodes:
             edgeParList.append((i,self.GL,self.dTD,self.dTG,self.fChangeCut))
-            
+
         MPRWork=MPR(buildEachEdge,edgeParList,ncores)
         P=MPRWork.poolwork()
         del MPRWork  # delete the multi-threading worker to avoid memory leak
         P=[item for item in P if item!=None]
         return P
-        
-    # get eTF (expression based TFs) for each of the nodes 
+
+    # get eTF (expression based TFs) for each of the nodes
     # note, adjustRTF has to stay in Graph class, although it's for each of the nodes
     # the inference requires on the complete graph (e.g., parent-children relationships)
     # the expresson of the TF must be unique (different to the parent, *and* different to at least one sibling node)
@@ -531,36 +531,36 @@ class Graph:
         except:
             print("error! Please check your input TF List file")
             sys.exit(0)
-        
+
         RTFParList=[]
         eTFs=[item for item in GL if item in TFs]
         for i in self.Nodes:
             RTFParList.append((i,eTFs,GL,self.fChangeCut))
-        
-        
+
+
         MPRWork=MPR(adjustRTFEachNode,RTFParList,ncores)
         Res=MPRWork.poolwork()
         del MPRWork  # delete the multi-threading worker to avoid memory leak
-       
-        
+
+
         for i in Res:
             inode=[item for item in self.Nodes if item.ID==i[1]][0]
             inode.eTFs=i[0]
         del Res
-     
+
     # build nodes
     def __buildNodes(self,Clusters,ncores=None):
         print("building nodes...")
         print("start clustering ...")
-        
+
         for j in self.Cells:
             jID=j.ID
             Yj=Clusters[jID]
             j.Label=int(Yj)
-        
+
         ClusterList=sorted(list(set(Clusters)),key=lambda x:int(x))
         ClusterList=map(lambda x:int(x), ClusterList)
-        
+
         nodeParaList=[]
         for i in ClusterList:
             nodeID=i
@@ -572,8 +572,8 @@ class Graph:
         del MPRWork  # delete the multi-threading worker to avoid memory leak
         AC=sorted(AC,key=lambda x:x.T)
         return AC
-    
-    
+
+
     # guess the root node of the tree
     def __guessRoot(self,pagaConnects,rootnodeID=None):
         if rootnodeID==None:
@@ -591,7 +591,7 @@ class Graph:
         else:
             root=[item for item in self.Nodes if item.ID==int(rootnodeID)][0]
         return root
-   
+
     # connect each node (DFS)
     def __connectS(self,S,Visited,pagaConnects):
         iConnects=pagaConnects.loc[S.ID]+pagaConnects[S.ID]
@@ -602,24 +602,24 @@ class Graph:
                 jnode.P=S
                 print("%s->%s"%(S.ID,jnode.ID))
                 self.__connectS(jnode,Visited,pagaConnects)
-                
-        
+
+
     # connect nondes=> infer the parent node for each of the nodes
     def __connectNodes(self,pagaConnects):
         print("connecting nodes ....")
-        
+
         # delete old parent-child relationship
         for i in self.Nodes:
             i.P=None
             i.C=[]
-            
+
         self.__connectS(self.root,[],pagaConnects)
-        
+
         # add Children node information
         for inode in self.Nodes:
             if inode.P!=None:
                 inode.P.C+=[inode]
-        
+
 
 # In[11]: Class MPR
 ## Multiprocessing running
@@ -628,17 +628,20 @@ class MPR:
         self.Func=Func
         self.DataList=DataList
         self.ncores=ncores
-        
+
     def poolwork(self):
-        pool=Pool(processes=self.ncores,maxtasksperchild=1)
-        Res=pool.map_async(self.Func,self.DataList)
-        pool.close()
-        pool.join()
-        Res=Res.get()
-        del pool
+        if self.ncores>1:
+            pool=Pool(processes=self.ncores,maxtasksperchild=1)
+            Res=pool.map_async(self.Func,self.DataList)
+            pool.close()
+            pool.join()
+            Res=Res.get()
+            del pool
+        else:
+            Res=list(map(self.Func,self.DataList))
         return Res
 
-# In[12]: Functions for multi-threading 
+# In[12]: Functions for multi-threading
 ## can't use object functions as it will copy the entire object to the memory-> huge mem cost
 
 ## build each node
@@ -655,7 +658,7 @@ def buildEachEdge(iEdgePar):
     if toNode.P:
         p1=Path(toNode.P,toNode,GL,dTD,dTG,fChangeCut)
         return p1
-    return None   
+    return None
 
 ##adjustRTFEachNode : infer the eTFs for each of the nodes
 def adjustRTFEachNode(RTFParList):
@@ -677,7 +680,7 @@ def adjustRTFEachNode(RTFParList):
         peTFs=[]
     return [peTFs,Node.ID]
 
-## assign cell function, private, can only be callced by ReAssign 
+## assign cell function, private, can only be callced by ReAssign
 ## this one has to be public (for multi-threading purpose)
 ## calculate the assign probability of cell-> Node
 def AssignEachCell(cellParList):
@@ -685,7 +688,7 @@ def AssignEachCell(cellParList):
     print("cell : %s"%(cell.ID))
     pi=Node.getAssignProbability(cell,W)
     return [cell.ID,Node.ID,pi]
-       
+
 
 ##get the likelihood for node i based on the current cell assignment
 #  cell
@@ -707,12 +710,12 @@ def tellDifference(nodeCells,nodePCells,nodeSibCells,geneIndex,fcut=0.6):
     fcp=np.mean(X)-np.mean(XP)
     pvp=ranksums(X,XP)[1]
     pcut=0.05
-    
+
     # if no sibling nodes
     if len(nodeSibCells)==0:
         if (pvp<pcut) and (fcp>fcut or fcp<-1*fcut):
             return [1,pvp,fcp]
-    
+
     # if has sibling nodes
     for sNodeCells in nodeSibCells:
         Y=[item.E[0,geneIndex] for item in sNodeCells]
@@ -720,7 +723,7 @@ def tellDifference(nodeCells,nodePCells,nodeSibCells,geneIndex,fcut=0.6):
         pvs=ranksums(X,Y)[1]
         if (pvp<pcut and pvs<pcut) and ((fcp>fcut and fcs>fcut) or (fcp<-1*fcut and fcs<-1*fcut)):
             return [1,pvp,fcp]
-        
+
     return [0,pvp,fcp]
 
 # parse input tfdna file
@@ -756,7 +759,7 @@ def getTFDNAInteraction(TD,GL):
             if i[0] not in dTD:
                 dTD[i[0]] = [i[1]]
             else:
-                
+
                 dTD[i[0]].append(i[1])
 
             if i[1] not in dTG:
@@ -814,7 +817,7 @@ def buildTrain(G,dTG,ptf,GL,Fcut=1):
 
     X=XU+XD+XN
     Y=YU+YD+YN
-    
+
     # to solve the imbalanced training set issue, use over-sampling techqniue- SMOTE
     sm=SMOTE(random_state=0)
     Xs,Ys=sm.fit_sample(X,Y)
@@ -842,18 +845,18 @@ def logMessage(logText,logfile):
 
 # In[8] InferGraph function
 ## inferGraph based on given inputs
-def inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLOOP=5):   
+def inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLOOP=5):
     if os.path.exists(output)==False:
         os.mkdir(output)
     logfile=open("%s/runninglog.txt"%(output),'a')
     # log the start time
     tnow="The program starts at : %s \n"%(str(datetime.datetime.now()))
     logMessage(tnow,logfile)
-    
-    # log the parameters 
+
+    # log the parameters
     logTextPara="""\
     The program runs with the following arguments
-    
+
     $scdiff2
     -i %s
     -o %s
@@ -865,14 +868,14 @@ def inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLO
     --llhCut %s
     --maxloop %s \n\
     \n"""%(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLOOP)
-    
+
     logMessage(logTextPara,logfile)
-    
+
     #Read in the prerun results from the prerun (in h5ad format)
     print("loading back prerun results (h5ad) ...")
     prRes=anndata.read_h5ad(scg)
-    
-    
+
+
     #Convert full matrix to sparse_matrix to reduce the memory usage
     # Expression matrix (sparse)
     prRes.X=csr_matrix(prRes.X)
@@ -892,10 +895,10 @@ def inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLO
     # log reading cells
     logText1="reading cells ...\n"
     logMessage(logText1,logfile)
-    
+
     # list to store all cells
     AllCells=[]
-    
+
     for i in range(len(prRes.obs.index)):
         iid=prRes.obs.index[i]
         ti=float(prRes.obs.time[i])
@@ -907,45 +910,45 @@ def inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLO
     # log # of cells in the data
     logTextCells="Total # of cells: %s \n"%(len(AllCells))
     logMessage(logTextCells,logfile)
-    
+
     #log clustering
     logText2="clustering cells ...\n"
     logMessage(logText2,logfile)
-   
+
     #load clusters from the prerun results
     clusters=prRes.obs.leiden
-    
-    
+
+
     # log building graph (tree)
     logText3="building graph(tree) ...\n"
     logMessage(logText3,logfile)
-    
+
     G1=Graph(AllCells,tfdna,tfList,GL,clusters,pagaConnects,rootnodeID=rootnodeID,fChangeCut=fChangeCut,ncores=ncores)
-   
+
     #drawing graphs
     if os.path.exists(output)==False:
         os.mkdir(output)
 
     scg_name=scg.split('/')[-1]
-    
+
     # writing out Graph...
     viz(scg_name,G1,output,prRes)
-    
-    
+
+
     # if MAXLOOP (iterative refinment), calculate the inital llh
     if MAXLOOP>0:
         G1.llh=G1.getLikelihood(ncores) # old likelihood
         ollh=G1.llh
-        ILLH=ollh     # initial LLH 
+        ILLH=ollh     # initial LLH
         # log iterative refinment
         logText4="likelihood: %s\n"%(ollh)
         logMessage(logText4,logfile)
-   
-    
+
+
     for loop in range(MAXLOOP):
         logLoopText="->loop: %s \n"%(loop)
         logMessage(logLoopText,logfile)
-        
+
         nllh=G1.ReAssign(ncores)
         G1.llh=nllh
         increase_llh=(nllh-ollh)/abs(ILLH)
@@ -954,16 +957,16 @@ def inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLO
         logMessage(logText5,logfile)
         prRes=G1.updateGraph(prRes,ncores)
         if increase_llh<llhcut:
-            break 
+            break
         ollh=nllh      # update ollh<-nllh
-        
+
         # update the visualziation file
-        
+
         # log writing visualziation page
         logText6="updating the javascript powered visualization file (%s.html) under the InteractiveViz folder\n"%(scg_name)
         logMessage(logText6,logfile)
         viz(scg_name,G1,output,prRes)
-    
+
     # update the clustering and trajectory plots if there is a PGM iterative refinement
     if 'scdiff_cluster' in prRes.obs:
         logTextPlot="The stopping criteria is met, quit the loop \n\nUpdating the PGM refined clustering (UMAP), trajectory (PAGA), and DE genes plots \n"
@@ -977,16 +980,16 @@ def inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootnodeID,llhcut,MAXLO
         sc.pl.rank_genes_groups(prRes, n_genes=25, sharey=False,show=False, save="_global_DE_genes.pdf")
         # update the visualziation with the updated prRes
         viz(scg_name,G1,output,prRes)
-    
+
         # log writing h5ad
         logText7="writing the results to a %s/%s file ...\n"%(output,scg_name)
         logMessage(logText7,logfile)
         prRes.write_h5ad("%s/%s"%(output,scg_name),compression=9)
-        
-    # log ending 
+
+    # log ending
     logText8="job completed!\n"
     logMessage(logText8,logfile)
-    
+
     tnow="The program ends at : %s \n\n"%(str(datetime.datetime.now()))
     logMessage(tnow,logfile)
     logfile.close()
@@ -1003,20 +1006,20 @@ def main():
     required.add_argument('-o','--output',required=True,help='output directory')
     required.add_argument('-t','--tfdna',required=True, help='TF-DNA interaction data')
     optional.add_argument('--etfListFile',required=False,default=None,help='By default, this program recognizes 1.6k TFs (collected in human and mouse). Users are able ' +
-                                                                         'to provide a customized list of TFs　using this option (e.g, for another species).')                                                       
+                                                                         'to provide a customized list of TFs　using this option (e.g, for another species).')
     optional.add_argument('--log2fc',required=False,default=0.6, help='By default, scdiff uses log2 Fold change 0.6(=>2^0.6~=1.5) as the cutoff ' +
                                                                     'for differential genes (together with student t-test p-value cutoff 0.05). ' +
                                                                     'Users can customize this log fold change cutoff.')
     optional.add_argument('--ncores',required=False,default=4, help='# of allocated cpu cores for multi-threading the job (4 by default)')
-    optional.add_argument('--root',required=False,default=None, help='Set the root (of the tree) as an input cluster ID (e.g., 0 from the prerun result)')  
-    
+    optional.add_argument('--root',required=False,default=None, help='Set the root (of the tree) as an input cluster ID (e.g., 0 from the prerun result)')
+
     optional.add_argument('--llhCut',required=False,default=0.05, help='The convergence likelihood cutoff, the program stops if the cell ' +
-                                                                'assignment likelihood improvement is smaller than this cutoff (e.g. 0.05: 5 percent)') 
+                                                                'assignment likelihood improvement is smaller than this cutoff (e.g. 0.05: 5 percent)')
     optional.add_argument('--maxloop',required=False,default=5, help='The max # of loops allowed for the PGM based iterative refinment. Set it to 0 ' +
                                                                 'to directly use the clustering and trajectory results from the prerun program (scanpy based). ' +
                                                                 'Only the regulatory networks (TFs) and the interactive visulzation page ' +
                                                                 'will be learned and generated')
-    
+
     args = parser.parse_args()
     # input arguments
     scg=args.input
@@ -1028,12 +1031,10 @@ def main():
     rootNode=args.root
     llhcut=float(args.llhCut)
     MAXLOOP=int(args.maxloop)
-    
+
     inferGraph(scg,output,tfdna,tfList,fChangeCut,ncores,rootNode,llhcut,MAXLOOP)
 
 # In[10]: Program Entry
 if __name__=="__main__":
     mp.set_start_method('spawn',force=True)
     main()
-    
-
