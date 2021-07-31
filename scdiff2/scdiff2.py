@@ -341,7 +341,7 @@ class Path:
 # In[6]:Graph(Tree)
 ## class Graph
 class Graph:
-    def __init__(self,Cells,tfdna,etfile,GL,Clusters,pagaConnects,rootnodeID=None,fChangeCut=0.6,ncores=None):
+    def __init__(self,Cells,tfdna,etfile,GL,Clusters,pagaConnects,rootnodeID=None,fChangeCut=0.6,ncores=1):
         # native graph attributes
         print("initializing graph...")
         self.Cells=Cells
@@ -370,7 +370,7 @@ class Graph:
     # public functions (can be reached outside of the class to update and process the graph)
 
     # update the graph (tree)
-    def updateGraph(self,prRes,ncores=None):
+    def updateGraph(self,prRes,ncores=1):
         print("update the graph...")
 
         GL=[item.upper() for item in prRes.var.index]
@@ -382,7 +382,7 @@ class Graph:
         pagaConnects=pd.DataFrame(data=prRes.uns['paga']['connectivities_tree'].toarray())
 
         # update nodes
-        self.Nodes=self.__buildNodes(prRes.obs.scdiff_cluster)
+        self.Nodes=self.__buildNodes(prRes.obs.scdiff_cluster,ncores)
         self.root=self.__guessRoot(pagaConnects,self.root.ID)
         self.__connectNodes(pagaConnects)
         self.__adjustRTFs(ncores)
@@ -394,7 +394,7 @@ class Graph:
         return prRes
 
     # re-assign the cells (assign new cluster labels to all cells)
-    def ReAssign(self,ncores=None):
+    def ReAssign(self,ncores=1):
         # re-assign
         print("re-assigning all cells to the tree")
 
@@ -404,7 +404,7 @@ class Graph:
                 pij=(i,j,self.W)
                 cellParList.append(pij)
 
-        MPRWork=MPR(AssignEachCell,cellParList)
+        MPRWork=MPR(AssignEachCell,cellParList,ncores)
         Res=MPRWork.poolwork()
         del MPRWork
 
@@ -439,14 +439,14 @@ class Graph:
         return newlli
 
     # get the likelihood for the given assignment  (current node cells)
-    def getLikelihood(self,ncores=None):
+    def getLikelihood(self,ncores=1):
         print("calculate the likelihood for current Graph cell assignment...")
         llhParList=[]
         for i in self.Cells:
             iNode=[item for item in self.Nodes if item.ID==i.Label][0]
             llhParList.append((i,iNode,self.W))
 
-        MPRWork=MPR(getLikelihoodEach,llhParList)
+        MPRWork=MPR(getLikelihoodEach,llhParList,ncores)
         Tlli=MPRWork.poolwork()
         del MPRWork
         Tlli=sum(Tlli)
@@ -502,7 +502,7 @@ class Graph:
         return CP
 
     # build edges
-    def __buildEdges(self,ncores=None):
+    def __buildEdges(self,ncores=1):
         print("building edges ...")
         edgeParList=[]
         for i in self.Nodes:
@@ -518,7 +518,7 @@ class Graph:
     # note, adjustRTF has to stay in Graph class, although it's for each of the nodes
     # the inference requires on the complete graph (e.g., parent-children relationships)
     # the expresson of the TF must be unique (different to the parent, *and* different to at least one sibling node)
-    def __adjustRTFs(self,ncores=None):
+    def __adjustRTFs(self,ncores=1):
         print("adjusting RTFs...")
         GL=self.GL
         tflist=self.etfile
@@ -549,7 +549,7 @@ class Graph:
         del Res
 
     # build nodes
-    def __buildNodes(self,Clusters,ncores=None):
+    def __buildNodes(self,Clusters,ncores=1):
         print("building nodes...")
         print("start clustering ...")
 
@@ -624,7 +624,7 @@ class Graph:
 # In[11]: Class MPR
 ## Multiprocessing running
 class MPR:
-    def __init__(self,Func,DataList,ncores=None):
+    def __init__(self,Func,DataList,ncores=1):
         self.Func=Func
         self.DataList=DataList
         self.ncores=ncores
