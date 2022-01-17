@@ -379,7 +379,7 @@ class Graph:
 
         # update the paga connectivity
         sc.tl.paga(prRes,groups='scdiff_cluster')
-        pagaConnects=pd.DataFrame(data=prRes.uns['paga']['connectivities_tree'].toarray())
+        pagaConnects=pd.DataFrame(data=prRes.uns['paga']['connectivities_tree'].toarray(),index=prRes.obs['scdiff_cluster'].cat.categories,columns=prRes.obs['scdiff_cluster'].cat.categories)
 
         # update nodes
         self.Nodes=self.__buildNodes(prRes.obs.scdiff_cluster,ncores)
