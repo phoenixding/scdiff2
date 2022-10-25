@@ -316,7 +316,7 @@ see the LICENSE.txt file for details.
 
 
 # CONTACT 
-jund  at cs.cmu.edu
+jun.ding at mcgill.ca
 
 
 
